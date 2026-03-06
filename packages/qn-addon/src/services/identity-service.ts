@@ -1,7 +1,9 @@
 import { Connection, PublicKey, AccountInfo } from '@solana/web3.js';
 
 // Placeholder — will be replaced with the actual deployed program ID
-const SOVEREIGN_PROGRAM_ID = new PublicKey('SoVRN1111111111111111111111111111111111111');
+const SOVEREIGN_PROGRAM_ID = new PublicKey(
+  process.env.SOVEREIGN_PROGRAM_ID || '11111111111111111111111111111111'
+);
 
 /**
  * SOVEREIGN identity account binary layout (236 bytes):
