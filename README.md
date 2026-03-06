@@ -1,30 +1,30 @@
 # Accredit
 
-Shared KYC/AML compliance infrastructure for Solana. Accredit provides on-chain transfer enforcement and compliant DEX routing as reusable building blocks for regulated token applications.
+Chain-agnostic KYC/AML compliance infrastructure. On-chain transfer enforcement and compliant DEX routing as reusable building blocks for regulated token applications.
 
 ## Overview
 
 Accredit is organized into two layers:
 
-**Core Layer** — KYC verification and transfer enforcement via Token-2022 transfer hooks. Every token transfer is validated against an on-chain whitelist that tracks KYC level, jurisdiction, expiry, and daily volume limits.
+**Core Layer** — Chain-agnostic compliance types and logic. KYC levels, jurisdiction checks, trade limits, and whitelist/blacklist management work across any chain. The Solana implementation uses Token-2022 transfer hooks for on-chain enforcement.
 
-**Routing Layer** — Compliance-aware DEX aggregation built on top of Jupiter. Routes are filtered to only pass through audited, whitelisted liquidity pools. Includes optional zero-knowledge proof support for privacy-preserving compliance.
+**Routing Layer** — Compliance-aware DEX aggregation. Routes are filtered to only pass through audited, whitelisted liquidity pools. Currently integrates Jupiter (Solana) with the architecture ready for EVM aggregator support. Includes optional zero-knowledge proof support for privacy-preserving compliance.
 
 ```
                         ┌───────────────────────────────┐
                         │           Accredit             │
                         │                                │
-                        │  Core:                         │
-                        │   transfer-hook program        │
-                        │   accredit-types crate         │
+                        │  Core (chain-agnostic):        │
                         │   @accredit/types              │
+                        │   accredit-types crate         │
+                        │                                │
+                        │  Solana:                       │
+                        │   transfer-hook program        │
+                        │   compliant-registry program   │
+                        │   sovereign program            │
                         │   @accredit/sdk                │
                         │                                │
-                        │  Identity:                     │
-                        │   sovereign program            │
-                        │                                │
                         │  Routing:                      │
-                        │   compliant-registry program   │
                         │   @accredit/router             │
                         └───────────────┬───────────────-┘
                                         │
@@ -45,17 +45,31 @@ accredit/
 ├── crates/
 │   └── accredit-types/         # Shared Rust types (KycLevel, Jurisdiction, helpers)
 ├── programs/
-│   ├── transfer-hook/          # Token-2022 transfer hook — KYC enforcement
-│   ├── compliant-registry/     # Pool compliance registry — route verification
-│   └── sovereign/              # Universal identity & multi-dimensional reputation
+│   ├── transfer-hook/          # Token-2022 transfer hook — KYC enforcement (Solana)
+│   ├── compliant-registry/     # Pool compliance registry — route verification (Solana)
+│   └── sovereign/              # Universal identity & multi-dimensional reputation (Solana)
 ├── packages/
-│   ├── types/                  # @accredit/types — TypeScript type definitions
-│   ├── sdk/                    # @accredit/sdk — PDA derivation + KycClient
-│   ├── router/                 # @accredit/router — compliance-aware Jupiter routing
+│   ├── types/                  # @accredit/types — Chain-agnostic TypeScript types
+│   ├── sdk/                    # @accredit/sdk — Solana PDA derivation + clients
+│   ├── router/                 # @accredit/router — Compliance-aware DEX routing
 │   ├── sovereign-sdk/          # Sovereign identity SDK
 │   └── qn-addon/               # Fabrknt On-Chain Compliance — QuickNode add-on
 └── tests/                      # Integration tests (ts-mocha)
 ```
+
+## Chain-Agnostic Types
+
+`@accredit/types` has zero chain-specific dependencies. All address fields use `string` (not `PublicKey`), making types consumable from any chain context:
+
+```typescript
+import { KycLevel, Jurisdiction, isJurisdictionAllowed } from "@accredit/types";
+import type { WhitelistEntry, ComplianceCheckResult, Chain } from "@accredit/types";
+
+// Chain type: "solana" | "evm"
+// All addresses are plain strings — Solana base58 or EVM hex
+```
+
+Chain-specific SDKs (`@accredit/sdk` for Solana) convert between on-chain types and the chain-agnostic interfaces at the deserialization boundary.
 
 ## Programs
 
@@ -85,7 +99,7 @@ See [docs/programs/compliant-registry.md](docs/programs/compliant-registry.md) f
 
 ### Sovereign (Identity & Reputation)
 
-Universal identity and multi-dimensional reputation protocol merged from the sovereign repo:
+Universal identity and multi-dimensional reputation protocol:
 
 - **5 reputation dimensions** — Trading, Civic, Developer, Infra, Creator
 - **Tiered progression** — Bronze, Silver, Gold, Platinum, Diamond
@@ -97,13 +111,13 @@ See [docs/programs/sovereign.md](docs/programs/sovereign.md) for full reference.
 
 ## TypeScript Packages
 
-| Package | Description | Layer |
+| Package | Description | Chain |
 |---------|-------------|-------|
-| `@accredit/types` | Shared type definitions (enums, interfaces, constants) | Core |
-| `@accredit/sdk` | PDA derivation, `KycClient`, `RegistryClient` | Core |
-| `@accredit/router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Routing |
-| `sovereign-sdk` | Sovereign identity SDK | Identity |
-| `fabrknt-onchain-compliance` | Fabrknt On-Chain Compliance — QuickNode add-on | Add-on |
+| `@accredit/types` | Shared type definitions (enums, interfaces, constants) | Agnostic |
+| `@accredit/sdk` | PDA derivation, `KycClient`, `RegistryClient` | Solana |
+| `@accredit/router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Solana |
+| `sovereign-sdk` | Sovereign identity SDK | Solana |
+| `fabrknt-onchain-compliance` | Fabrknt On-Chain Compliance — QuickNode add-on | Solana |
 
 ### QuickNode Add-on: Fabrknt On-Chain Compliance
 
