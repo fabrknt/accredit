@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycLevel, Jurisdiction } from '@accredit/types';
-import type { WhitelistEntry } from '@accredit/types';
+import { KycLevel } from '@accredit/types';
+import type { WhitelistEntry, ComplianceCheckResult } from '@accredit/types';
 import { KycClient } from '@accredit/sdk';
 
 /**
@@ -31,11 +31,7 @@ export class KycComplianceChecker {
     trader: PublicKey,
     minKycLevel: KycLevel,
     allowedJurisdictionBitmask: number
-  ): Promise<{
-    isCompliant: boolean;
-    reason?: string;
-    entry?: WhitelistEntry;
-  }> {
+  ): Promise<ComplianceCheckResult> {
     return this.kycClient.checkCompliance(
       trader,
       minKycLevel,

@@ -1,5 +1,3 @@
-import { PublicKey } from '@solana/web3.js';
-
 /** KYC verification levels (mirrors on-chain enum) */
 export enum KycLevel {
   Basic = 0,
@@ -18,10 +16,13 @@ export enum Jurisdiction {
   Other = 5,
 }
 
-/** Unified WhitelistEntry (superset of both Meridian and Continuum) */
+/** Supported chain identifiers */
+export type Chain = "solana" | "evm";
+
+/** Unified WhitelistEntry (chain-agnostic) */
 export interface WhitelistEntry {
-  wallet: PublicKey;
-  registry: PublicKey;
+  wallet: string;
+  registry: string;
   kycLevel: KycLevel;
   jurisdiction: Jurisdiction;
   kycHash: Uint8Array;
@@ -38,8 +39,8 @@ export interface WhitelistEntry {
 
 /** Unified KycRegistry */
 export interface KycRegistry {
-  authority: PublicKey;
-  mint: PublicKey;
+  authority: string;
+  mint: string;
   whitelistCount: bigint;
   isActive: boolean;
   requireKyc: boolean;
@@ -72,12 +73,19 @@ export function isJurisdictionAllowed(jurisdiction: Jurisdiction): boolean {
 
 /** Blacklist entry for a sanctioned/blocked wallet (SSS-2 compliance) */
 export interface BlacklistEntry {
-  wallet: PublicKey;
-  registry: PublicKey;
+  wallet: string;
+  registry: string;
   reason: string;
   isActive: boolean;
-  addedBy: PublicKey;
+  addedBy: string;
   addedAt: bigint;
   removedAt: bigint;
   bump: number;
+}
+
+/** Compliance check result */
+export interface ComplianceCheckResult {
+  isCompliant: boolean;
+  reason?: string;
+  entry?: WhitelistEntry;
 }

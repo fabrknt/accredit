@@ -4,7 +4,7 @@ import type { PoolComplianceEntry } from '@accredit/types';
 import { findPoolRegistryPda, findPoolEntryPda } from '@accredit/sdk';
 
 /**
- * Manages the local whitelist cache of compliant pools synced from on-chain registry
+ * Manages the local whitelist cache of compliant pools synced from on-chain registry (Solana)
  */
 export class PoolWhitelistManager {
   private whitelistedPools: Map<string, PoolComplianceEntry> = new Map();
@@ -62,7 +62,7 @@ export class PoolWhitelistManager {
     for (const { account } of accounts) {
       const entry = this.deserializePoolEntry(account.data);
       if (entry && entry.status === PoolStatus.Active) {
-        this.whitelistedPools.set(entry.ammKey.toBase58(), entry);
+        this.whitelistedPools.set(entry.ammKey, entry);
       }
     }
 
@@ -98,7 +98,7 @@ export class PoolWhitelistManager {
 
   /** Manually add a pool to the whitelist (for testing or pre-population) */
   addPool(entry: PoolComplianceEntry): void {
-    this.whitelistedPools.set(entry.ammKey.toBase58(), entry);
+    this.whitelistedPools.set(entry.ammKey, entry);
   }
 
   /** Remove a pool from the local whitelist */
@@ -110,13 +110,13 @@ export class PoolWhitelistManager {
     try {
       let offset = 8;
 
-      const ammKey = new PublicKey(data.subarray(offset, offset + 32));
+      const ammKey = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const registry = new PublicKey(data.subarray(offset, offset + 32));
+      const registry = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const operator = new PublicKey(data.subarray(offset, offset + 32));
+      const operator = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       const strLen = data.readUInt32LE(offset);

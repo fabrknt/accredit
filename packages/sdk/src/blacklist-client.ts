@@ -3,7 +3,7 @@ import type { BlacklistEntry } from '@accredit/types';
 import { findBlacklistEntryPda } from './pda';
 
 /**
- * Client for reading and interacting with transfer-hook blacklist accounts.
+ * Solana client for reading transfer-hook blacklist accounts.
  * Handles deserialization of BlacklistEntry accounts (SSS-2 compliance).
  */
 export class BlacklistClient {
@@ -65,10 +65,10 @@ export class BlacklistClient {
     try {
       let offset = 8; // skip discriminator
 
-      const wallet = new PublicKey(data.subarray(offset, offset + 32));
+      const wallet = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const registry = new PublicKey(data.subarray(offset, offset + 32));
+      const registry = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       // Borsh string: 4-byte LE length prefix + UTF-8 bytes
@@ -80,7 +80,7 @@ export class BlacklistClient {
       const isActive = data[offset] === 1;
       offset += 1;
 
-      const addedBy = new PublicKey(data.subarray(offset, offset + 32));
+      const addedBy = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       const addedAt = data.readBigInt64LE(offset);

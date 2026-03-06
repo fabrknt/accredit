@@ -4,7 +4,7 @@ import type { PoolComplianceEntry } from '@accredit/types';
 import { findPoolRegistryPda, findPoolEntryPda } from './pda';
 
 /**
- * Client for reading PoolComplianceEntry accounts from the compliant-registry program.
+ * Solana client for reading PoolComplianceEntry accounts from the compliant-registry program.
  */
 export class RegistryClient {
   private connection: Connection;
@@ -68,13 +68,13 @@ export class RegistryClient {
     try {
       let offset = 8; // skip discriminator
 
-      const ammKey = new PublicKey(data.subarray(offset, offset + 32));
+      const ammKey = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const registry = new PublicKey(data.subarray(offset, offset + 32));
+      const registry = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const operator = new PublicKey(data.subarray(offset, offset + 32));
+      const operator = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       const strLen = data.readUInt32LE(offset);

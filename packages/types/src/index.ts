@@ -5,7 +5,13 @@ export {
   isJurisdictionInBitmask,
   isJurisdictionAllowed,
 } from './kyc';
-export type { WhitelistEntry, KycRegistry, BlacklistEntry } from './kyc';
+export type {
+  Chain,
+  WhitelistEntry,
+  KycRegistry,
+  BlacklistEntry,
+  ComplianceCheckResult,
+} from './kyc';
 
 export { PoolStatus } from './registry';
 export type {

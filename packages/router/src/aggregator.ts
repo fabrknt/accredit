@@ -1,4 +1,4 @@
-import { PublicKey, VersionedTransaction } from '@solana/web3.js';
+import { VersionedTransaction } from '@solana/web3.js';
 import type {
   AggregatorConfig,
   QuoteRequest,
@@ -87,8 +87,8 @@ export class JupiterAggregator {
 
   /** Compare quotes across multiple amounts */
   async getQuotes(
-    inputMint: PublicKey | string,
-    outputMint: PublicKey | string,
+    inputMint: string,
+    outputMint: string,
     amounts: string[]
   ): Promise<QuoteResponse[]> {
     const quotes = await Promise.all(
@@ -163,8 +163,8 @@ export class RouteOptimizer {
 
   /** Find the optimal route for a swap */
   async findOptimalRoute(
-    inputMint: PublicKey | string,
-    outputMint: PublicKey | string,
+    inputMint: string,
+    outputMint: string,
     amount: string,
     options?: {
       slippageBps?: number;
@@ -199,8 +199,8 @@ export class RouteOptimizer {
 
   /** Check price impact and warn if too high */
   async checkPriceImpact(
-    inputMint: PublicKey | string,
-    outputMint: PublicKey | string,
+    inputMint: string,
+    outputMint: string,
     amount: string,
     maxImpactPct: number = 1.0
   ): Promise<{

@@ -1,4 +1,3 @@
-import { PublicKey } from '@solana/web3.js';
 import type { KycLevel, Jurisdiction } from './kyc';
 
 /** Pool compliance status */
@@ -8,11 +7,11 @@ export enum PoolStatus {
   Revoked = 2,
 }
 
-/** On-chain PoolComplianceEntry deserialized */
+/** On-chain PoolComplianceEntry deserialized (chain-agnostic) */
 export interface PoolComplianceEntry {
-  ammKey: PublicKey;
-  registry: PublicKey;
-  operator: PublicKey;
+  ammKey: string;
+  registry: string;
+  operator: string;
   dexLabel: string;
   status: PoolStatus;
   jurisdiction: Jurisdiction;
@@ -23,26 +22,19 @@ export interface PoolComplianceEntry {
   updatedAt: number;
 }
 
-/** Compliant quote result wrapping Jupiter QuoteResponse */
+/** Compliant quote result wrapping aggregator response */
 export interface CompliantQuoteResult {
-  /** Original Jupiter quote (filtered to compliant route) */
   quote: QuoteResponse;
-  /** Whether the original route was fully compliant or was re-fetched */
   wasFiltered: boolean;
-  /** Number of compliant hops in the route */
   compliantHopCount: number;
-  /** Trader's KYC level */
   traderKycLevel: KycLevel;
-  /** Trader's jurisdiction */
   traderJurisdiction: Jurisdiction;
 }
 
 /** Compliance check result for a single route */
 export interface RouteComplianceResult {
   isCompliant: boolean;
-  /** AMM keys that are NOT in the whitelist */
   nonCompliantPools: string[];
-  /** AMM keys that passed compliance */
   compliantPools: string[];
 }
 
@@ -50,30 +42,36 @@ export interface RouteComplianceResult {
 export interface ComplianceRouterConfig {
   /** RPC connection URL */
   rpcUrl?: string;
-  /** Compliant registry program ID */
-  registryProgramId?: PublicKey;
-  /** Transfer-hook program ID for KYC lookups */
-  transferHookProgramId?: PublicKey;
-  /** Jupiter API base URL */
-  jupiterApiBaseUrl?: string;
+  /** Compliant registry program/contract address */
+  registryAddress?: string;
+  /** Transfer-hook/compliance contract address */
+  complianceAddress?: string;
+  /** DEX aggregator API base URL */
+  aggregatorApiBaseUrl?: string;
   /** Default slippage in basis points */
   defaultSlippageBps?: number;
   /** Whether to fall back to direct routes when multi-hop fails compliance */
   fallbackToDirectRoutes?: boolean;
   /** Maximum route hops to consider */
   maxRouteHops?: number;
+  /** @deprecated Use registryAddress */
+  registryProgramId?: unknown;
+  /** @deprecated Use complianceAddress */
+  transferHookProgramId?: unknown;
+  /** @deprecated Use aggregatorApiBaseUrl */
+  jupiterApiBaseUrl?: string;
 }
 
-/** On-chain ComplianceConfig deserialized */
+/** On-chain ComplianceConfig deserialized (chain-agnostic) */
 export interface ComplianceConfig {
-  authority: PublicKey;
-  poolRegistry: PublicKey;
-  kycRegistry: PublicKey;
+  authority: string;
+  poolRegistry: string;
+  kycRegistry: string;
   jurisdictionBitmask: number;
   basicTradeLimit: bigint;
   standardTradeLimit: bigint;
   enhancedTradeLimit: bigint;
-  zkVerifierKey: PublicKey;
+  zkVerifierKey: string;
   isActive: boolean;
   maxRouteHops: number;
   createdAt: bigint;
@@ -90,21 +88,17 @@ export interface ZkComplianceProof {
   jurisdictionCommitment: Uint8Array;
 }
 
-/** Jupiter aggregator configuration */
+/** DEX aggregator configuration */
 export interface AggregatorConfig {
-  /** Jupiter API base URL */
   apiBaseUrl?: string;
-  /** Default slippage in basis points (e.g., 50 = 0.5%) */
   defaultSlippageBps?: number;
-  /** Maximum number of routes to consider */
   maxRoutes?: number;
-  /** Request timeout in milliseconds */
   timeoutMs?: number;
 }
 
 export interface QuoteRequest {
-  inputMint: PublicKey | string;
-  outputMint: PublicKey | string;
+  inputMint: string;
+  outputMint: string;
   amount: string;
   slippageBps?: number;
   onlyDirectRoutes?: boolean;
@@ -160,7 +154,7 @@ export interface RouteStep {
 
 export interface SwapParams {
   quoteResponse: QuoteResponse;
-  userPublicKey: PublicKey | string;
+  userPublicKey: string;
   wrapAndUnwrapSol?: boolean;
   dynamicComputeUnitLimit?: boolean;
   prioritizationFeeLamports?: number | 'auto';

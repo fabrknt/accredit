@@ -20,7 +20,7 @@ const DEFAULT_TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
 );
 
 /**
- * Compliance-aware router that wraps Jupiter DEX aggregation.
+ * Compliance-aware router that wraps Jupiter DEX aggregation (Solana).
  *
  * Flow:
  * 1. Check trader KYC status via transfer-hook WhitelistEntry
@@ -36,7 +36,7 @@ export class ComplianceAwareRouter {
   private filter: RouteComplianceFilter;
   private kycChecker: KycComplianceChecker;
   private zkProver: ZkComplianceProver;
-  private config: Required<ComplianceRouterConfig>;
+  private routerConfig: ComplianceRouterConfig;
 
   constructor(
     connection: Connection,
@@ -44,29 +44,33 @@ export class ComplianceAwareRouter {
     config: ComplianceRouterConfig = {},
     noirProver?: NoirProverLike
   ) {
-    const registryProgramId =
-      config.registryProgramId ?? DEFAULT_REGISTRY_PROGRAM_ID;
-    const transferHookProgramId =
-      config.transferHookProgramId ?? DEFAULT_TRANSFER_HOOK_PROGRAM_ID;
+    const registryProgramId = config.registryAddress
+      ? new PublicKey(config.registryAddress)
+      : (config.registryProgramId as PublicKey | undefined) ?? DEFAULT_REGISTRY_PROGRAM_ID;
+    const transferHookProgramId = config.complianceAddress
+      ? new PublicKey(config.complianceAddress)
+      : (config.transferHookProgramId as PublicKey | undefined) ?? DEFAULT_TRANSFER_HOOK_PROGRAM_ID;
 
-    this.config = {
+    const apiBaseUrl = config.aggregatorApiBaseUrl || config.jupiterApiBaseUrl || 'https://quote-api.jup.ag/v6';
+
+    this.routerConfig = {
       rpcUrl: config.rpcUrl ?? '',
-      registryProgramId,
-      transferHookProgramId,
-      jupiterApiBaseUrl: config.jupiterApiBaseUrl ?? 'https://quote-api.jup.ag/v6',
+      registryAddress: registryProgramId.toBase58(),
+      complianceAddress: transferHookProgramId.toBase58(),
+      aggregatorApiBaseUrl: apiBaseUrl,
       defaultSlippageBps: config.defaultSlippageBps ?? 50,
       fallbackToDirectRoutes: config.fallbackToDirectRoutes ?? true,
       maxRouteHops: config.maxRouteHops ?? 4,
     };
 
     this.aggregator = new JupiterAggregator({
-      apiBaseUrl: this.config.jupiterApiBaseUrl,
-      defaultSlippageBps: this.config.defaultSlippageBps,
+      apiBaseUrl,
+      defaultSlippageBps: this.routerConfig.defaultSlippageBps,
     });
 
     this.optimizer = new RouteOptimizer({
-      apiBaseUrl: this.config.jupiterApiBaseUrl,
-      defaultSlippageBps: this.config.defaultSlippageBps,
+      apiBaseUrl,
+      defaultSlippageBps: this.routerConfig.defaultSlippageBps,
     });
 
     this.whitelist = new PoolWhitelistManager(
@@ -118,7 +122,7 @@ export class ComplianceAwareRouter {
     }
 
     // Step 4: Retry with direct route
-    if (this.config.fallbackToDirectRoutes) {
+    if (this.routerConfig.fallbackToDirectRoutes) {
       const directRequest: QuoteRequest = {
         ...request,
         onlyDirectRoutes: true,

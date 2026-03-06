@@ -3,7 +3,7 @@ import type { KycLevel, Jurisdiction, WhitelistEntry, KycRegistry } from '@accre
 import { findKycRegistryPda, findWhitelistEntryPda } from './pda';
 
 /**
- * Client for reading and interacting with transfer-hook KYC accounts.
+ * Solana client for reading transfer-hook KYC accounts.
  * Handles deserialization of WhitelistEntry and KycRegistry accounts.
  */
 export class KycClient {
@@ -36,7 +36,8 @@ export class KycClient {
 
   /** Fetch a WhitelistEntry account */
   async getWhitelistEntry(wallet: PublicKey): Promise<WhitelistEntry | null> {
-    const cached = this.entryCache.get(wallet.toBase58());
+    const walletStr = wallet.toBase58();
+    const cached = this.entryCache.get(walletStr);
     if (cached) return cached;
 
     const [pda] = this.deriveWhitelistPda(wallet);
@@ -45,7 +46,7 @@ export class KycClient {
 
     const entry = this.deserializeWhitelistEntry(accountInfo.data);
     if (entry) {
-      this.entryCache.set(wallet.toBase58(), entry);
+      this.entryCache.set(walletStr, entry);
     }
     return entry;
   }
@@ -104,10 +105,10 @@ export class KycClient {
     try {
       let offset = 8; // skip discriminator
 
-      const authority = new PublicKey(data.subarray(offset, offset + 32));
+      const authority = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const mint = new PublicKey(data.subarray(offset, offset + 32));
+      const mint = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       const whitelistCount = data.readBigUInt64LE(offset);
@@ -150,10 +151,10 @@ export class KycClient {
     try {
       let offset = 8; // skip discriminator
 
-      const wallet = new PublicKey(data.subarray(offset, offset + 32));
+      const wallet = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
-      const registry = new PublicKey(data.subarray(offset, offset + 32));
+      const registry = new PublicKey(data.subarray(offset, offset + 32)).toBase58();
       offset += 32;
 
       const kycLevel = data[offset] as KycLevel;
