@@ -20,6 +20,9 @@ Accredit is organized into two layers:
                         │   @accredit/types              │
                         │   @accredit/sdk                │
                         │                                │
+                        │  Identity:                     │
+                        │   sovereign program            │
+                        │                                │
                         │  Routing:                      │
                         │   compliant-registry program   │
                         │   @accredit/router             │
@@ -43,11 +46,14 @@ accredit/
 │   └── accredit-types/         # Shared Rust types (KycLevel, Jurisdiction, helpers)
 ├── programs/
 │   ├── transfer-hook/          # Token-2022 transfer hook — KYC enforcement
-│   └── compliant-registry/     # Pool compliance registry — route verification
+│   ├── compliant-registry/     # Pool compliance registry — route verification
+│   └── sovereign/              # Universal identity & multi-dimensional reputation
 ├── packages/
 │   ├── types/                  # @accredit/types — TypeScript type definitions
 │   ├── sdk/                    # @accredit/sdk — PDA derivation + KycClient
-│   └── router/                 # @accredit/router — compliance-aware Jupiter routing
+│   ├── router/                 # @accredit/router — compliance-aware Jupiter routing
+│   ├── sovereign-sdk/          # Sovereign identity SDK
+│   └── qn-addon/               # Fabrknt On-Chain Compliance — QuickNode add-on
 └── tests/                      # Integration tests (ts-mocha)
 ```
 
@@ -77,6 +83,18 @@ On-chain registry of audited DEX pools for compliant route verification:
 
 See [docs/programs/compliant-registry.md](docs/programs/compliant-registry.md) for full reference.
 
+### Sovereign (Identity & Reputation)
+
+Universal identity and multi-dimensional reputation protocol merged from the sovereign repo:
+
+- **5 reputation dimensions** — Trading, Civic, Developer, Infra, Creator
+- **Tiered progression** — Bronze, Silver, Gold, Platinum, Diamond
+- **Creator DAO extension** — Governance for creator-led communities
+- **Admission Market extension** — Marketplace for identity and access credentials
+- On-chain identity aggregation linked to KYC and compliance state
+
+See [docs/programs/sovereign.md](docs/programs/sovereign.md) for full reference.
+
 ## TypeScript Packages
 
 | Package | Description | Layer |
@@ -84,6 +102,26 @@ See [docs/programs/compliant-registry.md](docs/programs/compliant-registry.md) f
 | `@accredit/types` | Shared type definitions (enums, interfaces, constants) | Core |
 | `@accredit/sdk` | PDA derivation, `KycClient`, `RegistryClient` | Core |
 | `@accredit/router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Routing |
+| `sovereign-sdk` | Sovereign identity SDK | Identity |
+| `fabrknt-onchain-compliance` | Fabrknt On-Chain Compliance — QuickNode add-on | Add-on |
+
+### QuickNode Add-on: Fabrknt On-Chain Compliance
+
+The `qn-addon` package (`fabrknt-onchain-compliance`) exposes compliance and identity data via QuickNode Marketplace:
+
+- KYC whitelist reads
+- Compliance checks
+- Identity reads
+- Trust assessment
+- Route compliance
+- ZK proof inputs
+
+**Plans:**
+
+| Plan | Price | Endpoints |
+|------|-------|-----------|
+| Starter | Free | Route compliance, trust assessment, ZK proof inputs |
+| Pro | $49/mo | All Starter endpoints + on-chain KYC and identity reads |
 
 See [docs/sdk/](docs/sdk/) for usage guides.
 
