@@ -21,9 +21,9 @@ export type {
   KycRegistry,
   BlacklistEntry,
   PoolComplianceEntry,
-} from '@accredit/types';
+} from '@accredit/core';
 export {
   KycLevel,
   Jurisdiction,
   PoolStatus,
-} from '@accredit/types';
+} from '@accredit/core';

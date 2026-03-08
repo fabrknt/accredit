@@ -1,5 +1,5 @@
 {
-  "name": "@accredit/types",
+  "name": "@accredit/core",
   "version": "0.1.0",
   "description": "Shared KYC/AML compliance type definitions",
   "main": "dist/index.js",

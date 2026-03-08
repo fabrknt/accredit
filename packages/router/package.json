@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@accredit/sdk": "workspace:*",
-    "@accredit/types": "workspace:*",
+    "@accredit/core": "workspace:*",
     "@solana/web3.js": "^1.98.0"
   },
   "devDependencies": {

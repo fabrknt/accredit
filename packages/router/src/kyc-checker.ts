@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycLevel } from '@accredit/types';
-import type { WhitelistEntry, ComplianceCheckResult } from '@accredit/types';
+import { KycLevel } from '@accredit/core';
+import type { WhitelistEntry, ComplianceCheckResult } from '@accredit/core';
 import { KycClient } from '@accredit/sdk';
 
 /**
