@@ -15,7 +15,7 @@ Accredit is organized into two layers:
                         │           Accredit             │
                         │                                │
                         │  Core (chain-agnostic):        │
-                        │   @accredit/types              │
+                        │   @accredit/core               │
                         │   accredit-types crate         │
                         │                                │
                         │  Solana:                       │
@@ -49,7 +49,7 @@ accredit/
 │   ├── compliant-registry/     # Pool compliance registry — route verification (Solana)
 │   └── sovereign/              # Universal identity & multi-dimensional reputation (Solana)
 ├── packages/
-│   ├── types/                  # @accredit/types — Chain-agnostic TypeScript types
+│   ├── core/                  # @accredit/core — Chain-agnostic TypeScript types
 │   ├── sdk/                    # @accredit/sdk — Solana PDA derivation + clients
 │   ├── router/                 # @accredit/router — Compliance-aware DEX routing
 │   ├── sovereign-sdk/          # Sovereign identity SDK
@@ -59,11 +59,11 @@ accredit/
 
 ## Chain-Agnostic Types
 
-`@accredit/types` has zero chain-specific dependencies. All address fields use `string` (not `PublicKey`), making types consumable from any chain context:
+`@accredit/core` has zero chain-specific dependencies. All address fields use `string` (not `PublicKey`), making types consumable from any chain context:
 
 ```typescript
-import { KycLevel, Jurisdiction, isJurisdictionAllowed } from "@accredit/types";
-import type { WhitelistEntry, ComplianceCheckResult, Chain } from "@accredit/types";
+import { KycLevel, Jurisdiction, isJurisdictionAllowed } from "@accredit/core";
+import type { WhitelistEntry, ComplianceCheckResult, Chain } from "@accredit/core";
 
 // Chain type: "solana" | "evm"
 // All addresses are plain strings — Solana base58 or EVM hex
@@ -113,7 +113,7 @@ See [docs/programs/sovereign.md](docs/programs/sovereign.md) for full reference.
 
 | Package | Description | Chain |
 |---------|-------------|-------|
-| `@accredit/types` | Shared type definitions (enums, interfaces, constants) | Agnostic |
+| `@accredit/core` | Shared type definitions (enums, interfaces, constants) | Agnostic |
 | `@accredit/sdk` | PDA derivation, `KycClient`, `RegistryClient` | Solana |
 | `@accredit/router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Solana |
 | `sovereign-sdk` | Sovereign identity SDK | Solana |
@@ -147,7 +147,7 @@ See [docs/sdk/](docs/sdk/) for usage guides.
 - [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools) (2.2.1+)
 - [Anchor](https://www.anchor-lang.com/docs/installation) (0.32.1)
 - [Node.js](https://nodejs.org/) (20+)
-- [pnpm](https://pnpm.io/) (8+)
+- [pnpm](https://pnpm.io/) (10.31.0+)
 
 ### Build
 
@@ -192,7 +192,7 @@ Then in your `package.json`:
 ```json
 {
   "dependencies": {
-    "@accredit/types": "workspace:*",
+    "@accredit/core": "workspace:*",
     "@accredit/sdk": "workspace:*",
     "@accredit/router": "workspace:*"
   }
@@ -226,7 +226,7 @@ See [docs/integration.md](docs/integration.md) for detailed integration instruct
 - [Architecture](docs/architecture.md) — System design, account structures, PDA derivation
 - [Transfer Hook Program](docs/programs/transfer-hook.md) — Instruction reference and account contexts
 - [Compliant Registry Program](docs/programs/compliant-registry.md) — Pool management and route verification
-- [SDK Guide](docs/sdk/getting-started.md) — `@accredit/types` and `@accredit/sdk` usage
+- [SDK Guide](docs/sdk/getting-started.md) — `@accredit/core` and `@accredit/sdk` usage
 - [Router Guide](docs/sdk/router.md) — `@accredit/router` compliance-aware routing
 - [Integration Guide](docs/integration.md) — Adding Accredit to your project
 
