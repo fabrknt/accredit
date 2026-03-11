@@ -544,6 +544,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "compliant-wrapper"
+version = "0.1.0"
+dependencies = [
+ "accredit-types",
+ "anchor-lang",
+ "anchor-spl",
+ "spl-token-2022",
+ "spl-transfer-hook-interface 0.8.2",
+]
+
+[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

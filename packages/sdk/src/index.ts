@@ -7,6 +7,9 @@ export {
   findPoolRegistryPda,
   findPoolEntryPda,
   findComplianceConfigPda,
+  findWrapperConfigPda,
+  findWrappedMintPda,
+  findWrapperVaultPda,
   PDA_SEEDS,
 } from './pda';
 
@@ -14,6 +17,7 @@ export {
 export { KycClient } from './kyc-client';
 export { BlacklistClient } from './blacklist-client';
 export { RegistryClient } from './registry-client';
+export { WrapperClient } from './wrapper-client';
 
 // Re-export types for convenience
 export type {
@@ -21,6 +25,7 @@ export type {
   KycRegistry,
   BlacklistEntry,
   PoolComplianceEntry,
+  WrapperConfig,
 } from '@accredit/core';
 export {
   KycLevel,

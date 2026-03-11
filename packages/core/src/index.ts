@@ -31,3 +31,10 @@ export type {
   SwapParams,
   SwapResponse,
 } from './registry';
+
+export type {
+  WrapperConfig,
+  WrapRequest,
+  UnwrapRequest,
+  WrapResult,
+} from './wrapper';

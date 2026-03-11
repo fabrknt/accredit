@@ -103,11 +103,15 @@ import {
   findPoolRegistryPda,
   findPoolEntryPda,
   findComplianceConfigPda,
+  findWrapperConfigPda,
+  findWrappedMintPda,
+  findWrapperVaultPda,
 } from '@accredit/sdk';
 import { PublicKey } from '@solana/web3.js';
 
 const TRANSFER_HOOK_PROGRAM = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
 const REGISTRY_PROGRAM = new PublicKey('66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA');
+const WRAPPER_PROGRAM = new PublicKey('CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L');
 
 // Core layer PDAs
 const [registryPda, registryBump] = findKycRegistryPda(mint, TRANSFER_HOOK_PROGRAM);
@@ -118,6 +122,11 @@ const [metasPda, metasBump] = findExtraAccountMetaListPda(mint, TRANSFER_HOOK_PR
 const [poolRegPda] = findPoolRegistryPda(authority, REGISTRY_PROGRAM);
 const [poolEntryPda] = findPoolEntryPda(poolRegPda, ammKey, REGISTRY_PROGRAM);
 const [configPda] = findComplianceConfigPda(authority, REGISTRY_PROGRAM);
+
+// Wrapper layer PDAs
+const [wrapperConfigPda] = findWrapperConfigPda(underlyingMint, authority, WRAPPER_PROGRAM);
+const [wrappedMintPda] = findWrappedMintPda(wrapperConfigPda, WRAPPER_PROGRAM);
+const [vaultPda] = findWrapperVaultPda(wrapperConfigPda, WRAPPER_PROGRAM);
 ```
 
 ### KycClient
@@ -194,6 +203,38 @@ if (pool && pool.status === PoolStatus.Active) {
 }
 ```
 
+### WrapperClient
+
+Reads compliant-wrapper accounts.
+
+```typescript
+import { WrapperClient } from '@accredit/sdk';
+
+const wrapperClient = new WrapperClient(
+  connection,
+  new PublicKey('CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L')
+);
+
+// Get wrapper config for a specific underlying mint + authority
+const config = await wrapperClient.getWrapperConfig(usdcMint, authority);
+if (config) {
+  console.log('Wrapped mint:', config.wrappedMint);
+  console.log('Total wrapped:', config.totalWrapped.toString());
+  console.log('Active:', config.isActive);
+  console.log('Min KYC:', config.minKycLevel);
+  console.log('Fee:', config.feeBps, 'bps');
+}
+
+// Get wrapper config by PDA address
+const configByAddr = await wrapperClient.getWrapperConfigByAddress(wrapperConfigPda);
+
+// List all wrapper configs
+const allConfigs = await wrapperClient.getAllWrapperConfigs();
+for (const cfg of allConfigs) {
+  console.log(cfg.underlyingMint, '→', cfg.wrappedMint);
+}
+```
+
 ### Re-exports
 
 `@accredit/sdk` re-exports common types for convenience:
@@ -209,5 +250,6 @@ import type {
   WhitelistEntry,
   KycRegistry,
   PoolComplianceEntry,
+  WrapperConfig,
 } from '@accredit/sdk';
 ```

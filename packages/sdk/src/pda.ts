@@ -9,6 +9,9 @@ const SEEDS = {
   poolRegistry: Buffer.from('pool_registry'),
   poolEntry: Buffer.from('pool_entry'),
   complianceConfig: Buffer.from('compliance_config'),
+  wrapperConfig: Buffer.from('wrapper_config'),
+  wrappedMint: Buffer.from('wrapped_mint'),
+  wrapperVault: Buffer.from('wrapper_vault'),
 } as const;
 
 // ============================================================================
@@ -93,6 +96,44 @@ export function findComplianceConfigPda(
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
     [SEEDS.complianceConfig, authority.toBuffer()],
+    programId
+  );
+}
+
+// ============================================================================
+// Compliant Wrapper PDAs (WRAPPING)
+// ============================================================================
+
+/** Derive PDA for WrapperConfig account */
+export function findWrapperConfigPda(
+  underlyingMint: PublicKey,
+  authority: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SEEDS.wrapperConfig, underlyingMint.toBuffer(), authority.toBuffer()],
+    programId
+  );
+}
+
+/** Derive PDA for wrapped Token-2022 mint */
+export function findWrappedMintPda(
+  wrapperConfig: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SEEDS.wrappedMint, wrapperConfig.toBuffer()],
+    programId
+  );
+}
+
+/** Derive PDA for wrapper vault token account */
+export function findWrapperVaultPda(
+  wrapperConfig: PublicKey,
+  programId: PublicKey
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [SEEDS.wrapperVault, wrapperConfig.toBuffer()],
     programId
   );
 }

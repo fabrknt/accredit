@@ -3,6 +3,7 @@ members = [
     "crates/accredit-types",
     "programs/transfer-hook",
     "programs/compliant-registry",
+    "programs/compliant-wrapper",
     "programs/sovereign"
 ]
 resolver = "2"

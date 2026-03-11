@@ -8,11 +8,13 @@ skip-lint = false
 
 [programs.devnet]
 compliant_registry = "hhcx645NBLLRrKry3dkDMTMzZfrCUEJk3UurUYBxjww"
+compliant_wrapper = "CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L"
 transfer_hook = "4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf"
 sovereign = "2UAZc1jj4QTSkgrC8U9d4a7EM9AQunxMvW5g7rX7Af9T"
 
 [programs.localnet]
 compliant_registry = "66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA"
+compliant_wrapper = "CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L"
 transfer_hook = "5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL"
 sovereign = "2UAZc1jj4QTSkgrC8U9d4a7EM9AQunxMvW5g7rX7Af9T"
 

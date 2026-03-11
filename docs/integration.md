@@ -19,7 +19,7 @@ Accredit is designed to sit alongside your project as a sibling directory:
 
 Import:
 - Rust: `accredit-types` crate
-- TypeScript: `@accredit/types`, `@accredit/sdk`
+- TypeScript: `@accredit/core`, `@accredit/sdk`
 - Programs: `transfer-hook`
 
 **Core + Routing** — Your project needs compliant DEX routing via Jupiter.
@@ -27,6 +27,17 @@ Import:
 Additionally import:
 - TypeScript: `@accredit/router`
 - Programs: `compliant-registry`
+
+**Core + Wrapper** — Your project wraps existing tokens (USDC, SOL) into KYC-gated equivalents.
+
+Additionally import:
+- TypeScript: `@accredit/sdk` (includes `WrapperClient`)
+- Programs: `compliant-wrapper`
+
+**Core + KYC Providers** — Your project integrates external identity providers (Civic, Worldcoin).
+
+Additionally import:
+- TypeScript: `@accredit/kyc-providers`
 
 ## Rust Integration
 
@@ -63,16 +74,20 @@ let limit = trade_limit_for_level(&KycLevel::Standard);
 let allowed = jurisdiction_allowed(&Jurisdiction::Japan);
 ```
 
-### 3. Reference the transfer-hook program
+### 3. Reference Accredit programs
 
-In your `Anchor.toml`, add the transfer-hook program if you need to invoke it via CPI:
+In your `Anchor.toml`, add the programs you need to invoke via CPI:
 
 ```toml
 [programs.localnet]
 transfer_hook = "5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL"
+compliant_registry = "66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA"
+compliant_wrapper = "CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L"
 
 [programs.devnet]
 transfer_hook = "5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL"
+compliant_registry = "66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA"
+compliant_wrapper = "CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L"
 ```
 
 ## TypeScript Integration
@@ -117,9 +132,21 @@ For **core + routing**:
 ```json
 {
   "dependencies": {
-    "@accredit/types": "workspace:*",
+    "@accredit/core": "workspace:*",
     "@accredit/sdk": "workspace:*",
     "@accredit/router": "workspace:*"
+  }
+}
+```
+
+For **core + KYC providers**:
+
+```json
+{
+  "dependencies": {
+    "@accredit/core": "workspace:*",
+    "@accredit/sdk": "workspace:*",
+    "@accredit/kyc-providers": "workspace:*"
   }
 }
 ```
@@ -190,6 +217,50 @@ const quote = await router.getCompliantQuote(
 // quote.wasFiltered indicates if the route was retried as direct-only
 ```
 
+**Wrapper: Read wrapper configs**
+
+```typescript
+import { WrapperClient } from '@accredit/sdk';
+
+const wrapperClient = new WrapperClient(
+  connection,
+  new PublicKey('CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L')
+);
+
+// Get wrapper config for a specific underlying mint
+const config = await wrapperClient.getWrapperConfig(usdcMint, authority);
+if (config) {
+  console.log('Wrapped mint:', config.wrappedMint);
+  console.log('Total wrapped:', config.totalWrapped.toString());
+  console.log('Fee:', config.feeBps, 'bps');
+}
+
+// List all wrapper configs
+const allConfigs = await wrapperClient.getAllWrapperConfigs();
+```
+
+**KYC Providers: Verify via Civic and bridge to whitelist**
+
+```typescript
+import { CivicProvider, KycProviderBridge } from '@accredit/kyc-providers';
+
+const civic = new CivicProvider(connection, gatekeeperNetworkKey);
+const bridge = new KycProviderBridge(
+  connection,
+  '5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL',
+  authorityKeypair
+);
+
+// Check if wallet has a valid Civic Pass
+const result = await civic.checkVerification(walletAddress);
+
+if (result) {
+  // Bridge to on-chain whitelist params
+  const params = bridge.buildWhitelistParams(result);
+  // Use params with add_to_whitelist instruction
+}
+```
+
 ## Re-exporting Types
 
 If your SDK re-exports KYC types, import from `@accredit/types` and re-export:
@@ -220,5 +291,7 @@ After setup, every `transfer_checked` on the mint will automatically invoke the 
 |---------|-----|
 | Transfer Hook | `5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL` |
 | Compliant Registry | `66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA` |
+| Compliant Wrapper | `CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L` |
+| Sovereign | `2UAZc1jj4QTSkgrC8U9d4a7EM9AQunxMvW5g7rX7Af9T` |
 
 These are the same on localnet and devnet. Mainnet program IDs will be published when deployed.

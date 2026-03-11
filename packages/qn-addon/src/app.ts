@@ -12,6 +12,8 @@ import routeRoutes from "./routes/route";
 import zkRoutes from "./routes/zk";
 import identityRoutes from "./routes/identity";
 import trustRoutes from "./routes/trust";
+import providerRoutes from "./routes/providers";
+import wrapperRoutes from "./routes/wrapper";
 
 const app = express();
 
@@ -34,6 +36,8 @@ app.use(routeRoutes);
 app.use(zkRoutes);
 app.use(identityRoutes);
 app.use(trustRoutes);
+app.use(providerRoutes);
+app.use(wrapperRoutes);
 
 /* ------------------------------------------------------------------ */
 /*  Error handler (must be last)                                       */
