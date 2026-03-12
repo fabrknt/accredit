@@ -38,3 +38,14 @@ export type {
   UnwrapRequest,
   WrapResult,
 } from './wrapper';
+
+export {
+  kycLevelToString,
+  kycLevelFromString,
+  jurisdictionToString,
+  jurisdictionFromString,
+} from './compat';
+export type {
+  KycLevelString,
+  JurisdictionString,
+} from './compat';
