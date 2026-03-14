@@ -1,6 +1,6 @@
 {
-  "name": "@accredit/qn-addon",
-  "version": "0.1.0",
+  "name": "@fabrknt/accredit-qn-addon",
+  "version": "1.0.0",
   "description": "Accredit KYC Gateway — QuickNode Marketplace Add-On",
   "main": "dist/index.js",
   "scripts": {
@@ -32,5 +32,9 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
   }
 }

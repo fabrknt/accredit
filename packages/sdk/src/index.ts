@@ -26,9 +26,9 @@ export type {
   BlacklistEntry,
   PoolComplianceEntry,
   WrapperConfig,
-} from '@accredit/core';
+} from '@fabrknt/accredit-core';
 export {
   KycLevel,
   Jurisdiction,
   PoolStatus,
-} from '@accredit/core';
+} from '@fabrknt/accredit-core';

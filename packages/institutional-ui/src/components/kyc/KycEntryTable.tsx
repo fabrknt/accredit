@@ -1,5 +1,5 @@
-import { KycLevel, Jurisdiction } from '@accredit/core';
-import type { WhitelistEntry } from '@accredit/core';
+import { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
+import type { WhitelistEntry } from '@fabrknt/accredit-core';
 import { DataTable, truncateAddress } from '../common/DataTable';
 import { StatusBadge } from '../common/StatusBadge';
 import type { ColumnDef } from '../../types';

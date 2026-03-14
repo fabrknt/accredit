@@ -1,4 +1,4 @@
-import type { KycLevel, Jurisdiction } from '@accredit/core';
+import type { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
 
 /** Result of a single compliance check */
 export interface ComplianceResult {

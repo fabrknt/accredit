@@ -1,6 +1,6 @@
 # SDK Guide
 
-## @accredit/types
+## @fabrknt/accredit-core
 
 Shared TypeScript type definitions that mirror the on-chain account structures. This package has no dependencies beyond `@solana/web3.js`.
 
@@ -9,7 +9,7 @@ Shared TypeScript type definitions that mirror the on-chain account structures. 
 ```json
 {
   "dependencies": {
-    "@accredit/types": "workspace:*"
+    "@fabrknt/accredit-core": "workspace:*"
   }
 }
 ```
@@ -17,7 +17,7 @@ Shared TypeScript type definitions that mirror the on-chain account structures. 
 ### Enums
 
 ```typescript
-import { KycLevel, Jurisdiction, PoolStatus } from '@accredit/types';
+import { KycLevel, Jurisdiction, PoolStatus } from '@fabrknt/accredit-core';
 
 // KYC verification levels
 KycLevel.Basic          // 0
@@ -47,7 +47,7 @@ import type {
   KycRegistry,
   PoolComplianceEntry,
   ComplianceConfig,
-} from '@accredit/types';
+} from '@fabrknt/accredit-core';
 ```
 
 These interfaces match the on-chain account layouts. See [architecture.md](../architecture.md) for field definitions.
@@ -59,7 +59,7 @@ import {
   KYC_TRADE_LIMITS,
   isJurisdictionInBitmask,
   isJurisdictionAllowed,
-} from '@accredit/types';
+} from '@fabrknt/accredit-core';
 
 // Per-level trade limits (bigint, 6 decimal base units)
 KYC_TRADE_LIMITS[KycLevel.Basic];          // 100_000_000_000n (100K JPY)
@@ -79,7 +79,7 @@ isJurisdictionAllowed(Jurisdiction.Usa);    // false
 
 ---
 
-## @accredit/sdk
+## @fabrknt/accredit-sdk
 
 Core SDK for interacting with on-chain Accredit accounts. Provides PDA derivation, account deserialization, and compliance checking.
 
@@ -88,7 +88,7 @@ Core SDK for interacting with on-chain Accredit accounts. Provides PDA derivatio
 ```json
 {
   "dependencies": {
-    "@accredit/sdk": "workspace:*"
+    "@fabrknt/accredit-sdk": "workspace:*"
   }
 }
 ```
@@ -106,7 +106,7 @@ import {
   findWrapperConfigPda,
   findWrappedMintPda,
   findWrapperVaultPda,
-} from '@accredit/sdk';
+} from '@fabrknt/accredit-sdk';
 import { PublicKey } from '@solana/web3.js';
 
 const TRANSFER_HOOK_PROGRAM = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
@@ -135,7 +135,7 @@ Reads and deserializes transfer-hook accounts. Provides caching and compliance c
 
 ```typescript
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycClient, KycLevel } from '@accredit/sdk';
+import { KycClient, KycLevel } from '@fabrknt/accredit-sdk';
 
 const connection = new Connection('https://api.devnet.solana.com');
 const programId = new PublicKey('4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf');
@@ -186,7 +186,7 @@ client.clearCache(wallet);    // clear specific wallet
 Reads compliant-registry accounts.
 
 ```typescript
-import { RegistryClient, PoolStatus } from '@accredit/sdk';
+import { RegistryClient, PoolStatus } from '@fabrknt/accredit-sdk';
 
 const registryClient = new RegistryClient(connection, registryProgramId);
 
@@ -208,7 +208,7 @@ if (pool && pool.status === PoolStatus.Active) {
 Reads compliant-wrapper accounts.
 
 ```typescript
-import { WrapperClient } from '@accredit/sdk';
+import { WrapperClient } from '@fabrknt/accredit-sdk';
 
 const wrapperClient = new WrapperClient(
   connection,
@@ -237,19 +237,19 @@ for (const cfg of allConfigs) {
 
 ### Re-exports
 
-`@accredit/sdk` re-exports common types for convenience:
+`@fabrknt/accredit-sdk` re-exports common types for convenience:
 
 ```typescript
 import {
   KycLevel,
   Jurisdiction,
   PoolStatus,
-} from '@accredit/sdk';
+} from '@fabrknt/accredit-sdk';
 
 import type {
   WhitelistEntry,
   KycRegistry,
   PoolComplianceEntry,
   WrapperConfig,
-} from '@accredit/sdk';
+} from '@fabrknt/accredit-sdk';
 ```

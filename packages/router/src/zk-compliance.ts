@@ -1,4 +1,4 @@
-import type { ZkComplianceProof, KycLevel, Jurisdiction } from '@accredit/core';
+import type { ZkComplianceProof, KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
 
 /**
  * ZK compliance proof wrapper.

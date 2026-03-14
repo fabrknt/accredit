@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import type { KycLevel, WrapperConfig } from '@accredit/core';
+import type { KycLevel, WrapperConfig } from '@fabrknt/accredit-core';
 import { findWrapperConfigPda } from './pda';
 
 /**

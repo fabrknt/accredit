@@ -1,6 +1,6 @@
 # Router Guide
 
-## @accredit/router
+## @fabrknt/accredit-router
 
 Compliance-aware DEX routing that wraps Jupiter aggregation. Ensures every trade route passes through audited, whitelisted liquidity pools and that the trader meets KYC requirements.
 
@@ -9,7 +9,7 @@ Compliance-aware DEX routing that wraps Jupiter aggregation. Ensures every trade
 ```json
 {
   "dependencies": {
-    "@accredit/router": "workspace:*"
+    "@fabrknt/accredit-router": "workspace:*"
   }
 }
 ```
@@ -20,7 +20,7 @@ The main entry point. Orchestrates KYC checks, Jupiter quotes, and route filteri
 
 ```typescript
 import { Connection, PublicKey } from '@solana/web3.js';
-import { ComplianceAwareRouter } from '@accredit/router';
+import { ComplianceAwareRouter } from '@fabrknt/accredit-router';
 
 const connection = new Connection('https://api.devnet.solana.com');
 const registryAuthority = new PublicKey('...');  // Pool registry authority
@@ -131,7 +131,7 @@ if (zkProver.isZkEnabled) {
 Standalone Jupiter API client, usable without the full router:
 
 ```typescript
-import { JupiterAggregator, RouteOptimizer } from '@accredit/router';
+import { JupiterAggregator, RouteOptimizer } from '@fabrknt/accredit-router';
 
 const aggregator = new JupiterAggregator({
   apiBaseUrl: 'https://quote-api.jup.ag/v6',
@@ -171,7 +171,7 @@ const quotes = await aggregator.getQuotes(inputMint, outputMint, [
 Manages the local cache of whitelisted pools:
 
 ```typescript
-import { PoolWhitelistManager } from '@accredit/router';
+import { PoolWhitelistManager } from '@fabrknt/accredit-router';
 
 const whitelist = new PoolWhitelistManager(
   connection,
@@ -196,8 +196,8 @@ whitelist.removePool(ammKey);
 Optional zero-knowledge proof support for privacy-preserving compliance. Generates proofs that a trader meets KYC requirements without revealing their identity.
 
 ```typescript
-import { ComplianceAwareRouter } from '@accredit/router';
-import type { NoirProverLike } from '@accredit/router';
+import { ComplianceAwareRouter } from '@fabrknt/accredit-router';
+import type { NoirProverLike } from '@fabrknt/accredit-router';
 
 // Provide a NoirProver implementation
 const noirProver: NoirProverLike = {
@@ -253,7 +253,7 @@ try {
 
 ### Type Exports
 
-`@accredit/router` re-exports all types from `@accredit/types`:
+`@fabrknt/accredit-router` re-exports all types from `@fabrknt/accredit-core`:
 
 ```typescript
 import type {
@@ -265,5 +265,5 @@ import type {
   QuoteResponse,
   SwapParams,
   SwapResponse,
-} from '@accredit/router';
+} from '@fabrknt/accredit-router';
 ```

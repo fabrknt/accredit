@@ -284,7 +284,7 @@ pub fn get_fee_rate(tier: u8, base_fee_bps: u16) -> u16 {
 ### Reading Identity
 
 ```typescript
-import { SovereignClient, getIdentityPda } from '@sovereign/sdk';
+import { SovereignClient, getIdentityPda } from '@fabrknt/accredit-sovereign-sdk';
 
 // Using the SDK
 const client = new SovereignClient(provider, idl);
@@ -302,7 +302,7 @@ const [identityPda] = getIdentityPda(userPubkey);
 ### Checking Tier in Frontend
 
 ```typescript
-import { getTierName, getPointsToNextTier } from '@sovereign/sdk';
+import { getTierName, getPointsToNextTier } from '@fabrknt/accredit-sovereign-sdk';
 
 const scores = await client.getScores(userPubkey);
 if (scores) {

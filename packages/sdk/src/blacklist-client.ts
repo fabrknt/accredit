@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import type { BlacklistEntry } from '@accredit/core';
+import type { BlacklistEntry } from '@fabrknt/accredit-core';
 import { findBlacklistEntryPda } from './pda';
 
 /**

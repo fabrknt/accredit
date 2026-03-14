@@ -1,6 +1,6 @@
 # Institutional Dashboard
 
-## @accredit/institutional-ui
+## @fabrknt/accredit-institutional-ui
 
 A React-based compliance dashboard for institutional investors and compliance officers. Provides oversight of KYC entries, pool registries, wrapper operations, and compliance analytics.
 
@@ -19,10 +19,10 @@ A React-based compliance dashboard for institutional investors and compliance of
 pnpm install
 
 # Build dependencies first
-pnpm --filter @accredit/core build
+pnpm --filter @fabrknt/accredit-core build
 
 # Start the dashboard dev server
-pnpm --filter @accredit/institutional-ui dev
+pnpm --filter @fabrknt/accredit-institutional-ui dev
 ```
 
 The dashboard runs at `http://localhost:5173` by default.
@@ -39,7 +39,7 @@ VITE_QN_ADDON_URL=http://localhost:3000
 ### Production Build
 
 ```bash
-pnpm --filter @accredit/institutional-ui build
+pnpm --filter @fabrknt/accredit-institutional-ui build
 # Output: packages/institutional-ui/dist/
 ```
 
@@ -139,7 +139,7 @@ Uses `@solana/wallet-adapter-react` for wallet connection. The `WalletConnect` b
 
 | Package | Purpose |
 |---------|---------|
-| `@accredit/core` | Shared compliance types |
+| `@fabrknt/accredit-core` | Shared compliance types |
 | `@solana/web3.js` | Solana RPC connection |
 | `@solana/wallet-adapter-*` | Wallet connection |
 | `react-router-dom` | Client-side routing |

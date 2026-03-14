@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Jurisdiction, KycLevel } from '@accredit/core';
+import { Jurisdiction, KycLevel } from '@fabrknt/accredit-core';
 import { RegistryDashboard } from '../components/registry/RegistryDashboard';
 import type { PoolStatusResponse } from '../types';
 

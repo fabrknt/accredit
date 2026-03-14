@@ -1,5 +1,5 @@
 /**
- * @accredit/sdk — KYC Whitelist Check Example
+ * @fabrknt/accredit-sdk — KYC Whitelist Check Example
  *
  * Demonstrates looking up on-chain KYC whitelist entries and checking
  * whether a wallet meets the minimum requirements for a given
@@ -12,7 +12,7 @@ import {
   findKycRegistryPda,
   KycLevel,
   Jurisdiction,
-} from '@accredit/sdk';
+} from '@fabrknt/accredit-sdk';
 
 // ---------------------------------------------------------------------------
 // Setup

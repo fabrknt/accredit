@@ -1,6 +1,6 @@
 {
-  "name": "@accredit/kyc-providers",
-  "version": "0.1.0",
+  "name": "@fabrknt/accredit-kyc-providers",
+  "version": "1.0.0",
   "description": "KYC-as-a-Service provider integrations for Accredit",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -21,7 +21,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@accredit/core": "workspace:*",
+    "@fabrknt/accredit-core": "workspace:*",
     "@solana/web3.js": "^1.98.0"
   },
   "devDependencies": {
@@ -31,5 +31,9 @@
   "peerDependencies": {
     "@solana/web3.js": "^1.98.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }

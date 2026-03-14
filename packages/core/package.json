@@ -1,6 +1,6 @@
 {
-  "name": "@accredit/core",
-  "version": "0.1.0",
+  "name": "@fabrknt/accredit-core",
+  "version": "1.0.0",
   "description": "Shared KYC/AML compliance type definitions",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -28,5 +28,9 @@
     "typescript": "^5.6.3",
     "vitest": "^3.0.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }

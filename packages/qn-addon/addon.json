@@ -9,7 +9,7 @@
     "email": "support@fabrknt.com",
     "url": "https://fabrknt.com/support"
   },
-  "repository": "https://github.com/psyto/accredit",
+  "repository": "https://github.com/fabrknt/accredit",
   "chains": [
     {
       "id": "solana",

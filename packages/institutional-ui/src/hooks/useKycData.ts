@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { WhitelistEntry } from '@accredit/core';
+import type { WhitelistEntry } from '@fabrknt/accredit-core';
 import { useAccreditClient } from './useAccreditClient';
 
 interface KycDataState {

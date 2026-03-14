@@ -1,4 +1,4 @@
-import { KycLevel } from '@accredit/core';
+import { KycLevel } from '@fabrknt/accredit-core';
 import { truncateAddress } from '../common/DataTable';
 import { StatusBadge } from '../common/StatusBadge';
 import type { WrapperConfig } from '../../types';

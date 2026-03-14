@@ -1,6 +1,6 @@
 # KYC Providers Guide
 
-## @accredit/kyc-providers
+## @fabrknt/accredit-kyc-providers
 
 Multi-provider KYC integration that bridges external identity providers (Civic Pass, World ID) to Accredit's on-chain whitelist. Rather than performing KYC in-house, this package lets you plug into established identity networks and convert their verification results into on-chain whitelist entries.
 
@@ -9,7 +9,7 @@ Multi-provider KYC integration that bridges external identity providers (Civic P
 ```json
 {
   "dependencies": {
-    "@accredit/kyc-providers": "workspace:*"
+    "@fabrknt/accredit-kyc-providers": "workspace:*"
   }
 }
 ```
@@ -19,7 +19,7 @@ Multi-provider KYC integration that bridges external identity providers (Civic P
 All providers implement a common interface:
 
 ```typescript
-import type { KycProvider, ProviderVerificationResult } from '@accredit/kyc-providers';
+import type { KycProvider, ProviderVerificationResult } from '@fabrknt/accredit-kyc-providers';
 
 interface KycProvider {
   readonly name: string;
@@ -55,7 +55,7 @@ Reads Civic Pass gateway tokens directly from Solana. No dependency on `@civic/s
 
 ```typescript
 import { Connection } from '@solana/web3.js';
-import { CivicProvider } from '@accredit/kyc-providers';
+import { CivicProvider } from '@fabrknt/accredit-kyc-providers';
 
 const connection = new Connection('https://api.devnet.solana.com');
 
@@ -116,7 +116,7 @@ Verifies proof-of-personhood via the Worldcoin Developer Portal API. World ID pr
 ### Setup
 
 ```typescript
-import { WorldcoinProvider } from '@accredit/kyc-providers';
+import { WorldcoinProvider } from '@fabrknt/accredit-kyc-providers';
 
 const worldcoin = new WorldcoinProvider(
   'app_your_app_id',
@@ -150,7 +150,7 @@ if (result) {
 Runs multiple providers in parallel and applies a consensus strategy.
 
 ```typescript
-import { ProviderAggregator } from '@accredit/kyc-providers';
+import { ProviderAggregator } from '@fabrknt/accredit-kyc-providers';
 
 const aggregator = new ProviderAggregator();
 
@@ -181,7 +181,7 @@ if (result.verified) {
 Converts provider verification results into parameters for the on-chain `add_to_whitelist` instruction. Does not submit transactions — the caller uses the returned params with the SDK.
 
 ```typescript
-import { KycProviderBridge } from '@accredit/kyc-providers';
+import { KycProviderBridge } from '@fabrknt/accredit-kyc-providers';
 
 const bridge = new KycProviderBridge(
   connection,
@@ -262,12 +262,12 @@ import type {
   ProviderAggregatorConfig,
   AggregateVerificationResult,
   WhitelistParams,
-} from '@accredit/kyc-providers';
+} from '@fabrknt/accredit-kyc-providers';
 
 import {
   CivicProvider,
   WorldcoinProvider,
   ProviderAggregator,
   KycProviderBridge,
-} from '@accredit/kyc-providers';
+} from '@fabrknt/accredit-kyc-providers';
 ```

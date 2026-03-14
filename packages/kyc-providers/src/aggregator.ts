@@ -1,4 +1,4 @@
-import { KycLevel, Jurisdiction } from '@accredit/core';
+import { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
 import {
   ProviderAggregatorConfig,
   AggregateVerificationResult,

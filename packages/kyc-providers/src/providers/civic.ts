@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycLevel, Jurisdiction } from '@accredit/core';
+import { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
 import {
   KycProvider,
   ProviderVerificationResult,

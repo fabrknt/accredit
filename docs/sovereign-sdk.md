@@ -4,14 +4,18 @@ TypeScript SDK for interacting with the SOVEREIGN identity and reputation protoc
 
 ## Installation
 
-```bash
-npm install @sovereign/sdk
+```json
+{
+  "dependencies": {
+    "@fabrknt/accredit-sovereign-sdk": "workspace:*"
+  }
+}
 ```
 
 ## Quick Start
 
 ```typescript
-import { SovereignClient, getIdentityPda, SOVEREIGN_PROGRAM_ID } from '@sovereign/sdk';
+import { SovereignClient, getIdentityPda, SOVEREIGN_PROGRAM_ID } from '@fabrknt/accredit-sovereign-sdk';
 import { AnchorProvider } from '@coral-xyz/anchor';
 
 // Initialize client
@@ -317,7 +321,7 @@ function getIdentityPda(owner: PublicKey): [PublicKey, number]
 
 **Example**:
 ```typescript
-import { getIdentityPda } from '@sovereign/sdk';
+import { getIdentityPda } from '@fabrknt/accredit-sovereign-sdk';
 
 const [identityPda, bump] = getIdentityPda(userPubkey);
 ```
@@ -356,7 +360,7 @@ function getTierName(tier: number): string
 
 **Example**:
 ```typescript
-import { getTierName } from '@sovereign/sdk';
+import { getTierName } from '@fabrknt/accredit-sovereign-sdk';
 
 getTierName(1); // "Bronze"
 getTierName(3); // "Gold"
@@ -375,7 +379,7 @@ function getPointsToNextTier(compositeScore: number, currentTier: number): numbe
 
 **Example**:
 ```typescript
-import { getPointsToNextTier } from '@sovereign/sdk';
+import { getPointsToNextTier } from '@fabrknt/accredit-sovereign-sdk';
 
 const pointsNeeded = getPointsToNextTier(3500, 2);
 console.log(`${pointsNeeded} points to Gold tier`); // "500 points to Gold tier"
@@ -464,7 +468,7 @@ const TIER_CONFIGS: TierConfig[] = [
 ## Constants
 
 ```typescript
-import { SOVEREIGN_PROGRAM_ID } from '@sovereign/sdk';
+import { SOVEREIGN_PROGRAM_ID } from '@fabrknt/accredit-sovereign-sdk';
 
 console.log(SOVEREIGN_PROGRAM_ID.toString());
 // "2UAZc1jj4QTSkgrC8U9d4a7EM9AQunxMvW5g7rX7Af9T"

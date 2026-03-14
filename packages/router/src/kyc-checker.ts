@@ -1,11 +1,11 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycLevel } from '@accredit/core';
-import type { WhitelistEntry, ComplianceCheckResult } from '@accredit/core';
-import { KycClient } from '@accredit/sdk';
+import { KycLevel } from '@fabrknt/accredit-core';
+import type { WhitelistEntry, ComplianceCheckResult } from '@fabrknt/accredit-core';
+import { KycClient } from '@fabrknt/accredit-sdk';
 
 /**
  * Reads transfer-hook WhitelistEntry accounts to verify trader KYC status.
- * Delegates to KycClient from @accredit/sdk for account fetching/deserialization.
+ * Delegates to KycClient from @fabrknt/accredit-sdk for account fetching/deserialization.
  */
 export class KycComplianceChecker {
   private kycClient: KycClient;

@@ -2,7 +2,7 @@ import { Connection } from "@solana/web3.js";
 import { config } from "../config";
 
 /* ------------------------------------------------------------------ */
-/*  KYC enums (mirrored from @accredit/core to avoid hard dependency)  */
+/*  KYC enums (mirrored from @fabrknt/accredit-core to avoid hard dependency)  */
 /* ------------------------------------------------------------------ */
 
 enum KycLevel {
@@ -22,7 +22,7 @@ enum Jurisdiction {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Types (inline to avoid hard dep on @accredit/kyc-providers at      */
+/*  Types (inline to avoid hard dep on @fabrknt/accredit-kyc-providers at      */
 /*  runtime — the qn-addon may be deployed independently)              */
 /* ------------------------------------------------------------------ */
 

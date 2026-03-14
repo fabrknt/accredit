@@ -1,4 +1,4 @@
-# @sovereign/sdk
+# @fabrknt/accredit-sovereign-sdk
 
 TypeScript SDK for the SOVEREIGN identity and reputation protocol on Solana.
 
@@ -6,16 +6,18 @@ Five-dimension reputation system with Creator DAOs and admission prediction mark
 
 ## Installation
 
-```bash
-npm install @sovereign/sdk
-# or
-yarn add @sovereign/sdk
+```json
+{
+  "dependencies": {
+    "@fabrknt/accredit-sovereign-sdk": "workspace:*"
+  }
+}
 ```
 
 ## Quick Start
 
 ```typescript
-import { SovereignClient } from "@sovereign/sdk";
+import { SovereignClient } from "@fabrknt/accredit-sovereign-sdk";
 import { AnchorProvider } from "@coral-xyz/anchor";
 
 const provider = AnchorProvider.env();
@@ -40,7 +42,7 @@ console.log(`Creator: ${scores.creator}`);
 console.log(`Composite: ${scores.composite} (Tier ${scores.tier})`);
 
 // Get tier info
-import { getTierName, getPointsToNextTier } from "@sovereign/sdk";
+import { getTierName, getPointsToNextTier } from "@fabrknt/accredit-sovereign-sdk";
 console.log(getTierName(scores.tier));  // "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond"
 console.log(`Points to next tier: ${getPointsToNextTier(scores.composite, scores.tier)}`);
 ```
@@ -69,7 +71,7 @@ await client.updateCreatorScore(identityOwner, 6000, authorityKeypair);
 Peer-judgment DAOs based on Vitalik's creator coin model:
 
 ```typescript
-import { ContentType, VoteChoice } from "@sovereign/sdk";
+import { ContentType, VoteChoice } from "@fabrknt/accredit-sovereign-sdk";
 
 // Create a DAO
 await client.createDao({
@@ -104,7 +106,7 @@ await client.resolveNomination(daoPda, nominationPda, nomineeWallet);
 CPMM prediction markets on creator admission outcomes:
 
 ```typescript
-import { PositionSide } from "@sovereign/sdk";
+import { PositionSide } from "@fabrknt/accredit-sovereign-sdk";
 
 // Create a prediction market on a creator's admission
 await client.createMarket(daoPda, predictedCreatorWallet, {
@@ -133,7 +135,7 @@ import {
   calculateCreatorScore,
   calculateScoutScore,
   SCORE_WEIGHTS,
-} from "@sovereign/sdk";
+} from "@fabrknt/accredit-sovereign-sdk";
 
 // Composite score (weights: trading 30%, civic 20%, developer 15%, infra 10%, creator 25%)
 const composite = calculateCompositeScore({
@@ -168,7 +170,7 @@ import {
   getMarketPositionPda,
   getMarketFactoryPda,
   getSurfacingScorePda,
-} from "@sovereign/sdk";
+} from "@fabrknt/accredit-sovereign-sdk";
 
 const [identity, bump] = getIdentityPda(ownerWallet);
 const [dao] = getDaoPda(founderWallet, daoId);
@@ -192,7 +194,7 @@ import type {
   MarketPosition,
   MarketFactory,
   SurfacingScore,
-} from "@sovereign/sdk";
+} from "@fabrknt/accredit-sovereign-sdk";
 ```
 
 ## License

@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { PoolStatus } from '@accredit/core';
-import type { PoolComplianceEntry } from '@accredit/core';
+import { PoolStatus } from '@fabrknt/accredit-core';
+import type { PoolComplianceEntry } from '@fabrknt/accredit-core';
 import { findPoolRegistryPda, findPoolEntryPda } from './pda';
 
 /**

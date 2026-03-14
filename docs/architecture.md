@@ -8,10 +8,10 @@ Accredit separates concerns into four layers that consumers import independently
 ┌─────────────────────────────────────────────────────────────┐
 │  IDENTITY LAYER (KYC-as-a-Service + institutional UI)       │
 │                                                             │
-│  @accredit/kyc-providers                                    │
+│  @fabrknt/accredit-kyc-providers                                    │
 │    └─ Civic Pass, World ID, aggregation, bridge             │
 │                                                             │
-│  @accredit/institutional-ui                                 │
+│  @fabrknt/accredit-institutional-ui                                 │
 │    └─ React dashboard for compliance officers               │
 ├─────────────────────────────────────────────────────────────┤
 │  WRAPPER LAYER (compliant asset wrapping)                   │
@@ -25,7 +25,7 @@ Accredit separates concerns into four layers that consumers import independently
 │  compliant-registry program                                 │
 │    └─ Pool whitelist, audit tracking, route verification    │
 │                                                             │
-│  @accredit/router                                           │
+│  @fabrknt/accredit-router                                           │
 │    └─ ComplianceAwareRouter → Jupiter → route filtering     │
 ├─────────────────────────────────────────────────────────────┤
 │  CORE LAYER (KYC/AML transfer enforcement)                  │
@@ -36,17 +36,17 @@ Accredit separates concerns into four layers that consumers import independently
 │  accredit-types crate                                       │
 │    └─ KycLevel, Jurisdiction, validation helpers            │
 │                                                             │
-│  @accredit/core + @accredit/sdk                             │
+│  @fabrknt/accredit-core + @fabrknt/accredit-sdk                             │
 │    └─ TypeScript types, PDA derivation, KycClient           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 Consumer projects choose their layers:
 
-- **Core only** — Basic KYC-gated token transfers. Import `accredit-types` (Rust) and `@accredit/core` + `@accredit/sdk` (TypeScript).
-- **Core + Routing** — Full compliant DEX routing. Additionally import the `compliant-registry` program and `@accredit/router`.
+- **Core only** — Basic KYC-gated token transfers. Import `accredit-types` (Rust) and `@fabrknt/accredit-core` + `@fabrknt/accredit-sdk` (TypeScript).
+- **Core + Routing** — Full compliant DEX routing. Additionally import the `compliant-registry` program and `@fabrknt/accredit-router`.
 - **Core + Wrapper** — KYC-gated asset wrapping. Additionally import the `compliant-wrapper` program.
-- **Core + Identity** — Multi-provider KYC integration. Additionally import `@accredit/kyc-providers`.
+- **Core + Identity** — Multi-provider KYC integration. Additionally import `@fabrknt/accredit-kyc-providers`.
 
 ## On-Chain Account Structure
 
@@ -291,18 +291,18 @@ When using external identity providers (Civic, Worldcoin) to populate the on-cha
 ## Package Dependency Graph
 
 ```
-@accredit/institutional-ui
-  ├── @accredit/core
+@fabrknt/accredit-institutional-ui
+  ├── @fabrknt/accredit-core
   └── @solana/wallet-adapter-*
 
-@accredit/kyc-providers
-  ├── @accredit/core
+@fabrknt/accredit-kyc-providers
+  ├── @fabrknt/accredit-core
   └── @solana/web3.js
 
-@accredit/router
-  ├── @accredit/sdk
-  │   └── @accredit/core
-  └── @accredit/core
+@fabrknt/accredit-router
+  ├── @fabrknt/accredit-sdk
+  │   └── @fabrknt/accredit-core
+  └── @fabrknt/accredit-core
 
 compliant-wrapper (Rust)
   └── accredit-types

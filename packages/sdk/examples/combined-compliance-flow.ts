@@ -1,15 +1,15 @@
 /**
- * @accredit/sdk + @complr/sdk — Combined Compliance Flow Example
+ * @fabrknt/accredit-sdk + @complr/sdk — Combined Compliance Flow Example
  *
  * Demonstrates the full compliance pipeline:
  * 1. Off-chain sanctions screening via @complr/sdk
- * 2. On-chain KYC whitelist verification via @accredit/sdk
+ * 2. On-chain KYC whitelist verification via @fabrknt/accredit-sdk
  *
  * This two-layer pattern is used across RWA tokenization, stablecoin,
  * and securities platforms to satisfy both AML and KYC requirements.
  */
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycClient, findWhitelistEntryPda, KycLevel } from '@accredit/sdk';
+import { KycClient, findWhitelistEntryPda, KycLevel } from '@fabrknt/accredit-sdk';
 import { ComplrClient } from '@complr/sdk';
 
 // ---------------------------------------------------------------------------

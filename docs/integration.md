@@ -19,25 +19,25 @@ Accredit is designed to sit alongside your project as a sibling directory:
 
 Import:
 - Rust: `accredit-types` crate
-- TypeScript: `@accredit/core`, `@accredit/sdk`
+- TypeScript: `@fabrknt/accredit-core`, `@fabrknt/accredit-sdk`
 - Programs: `transfer-hook`
 
 **Core + Routing** — Your project needs compliant DEX routing via Jupiter.
 
 Additionally import:
-- TypeScript: `@accredit/router`
+- TypeScript: `@fabrknt/accredit-router`
 - Programs: `compliant-registry`
 
 **Core + Wrapper** — Your project wraps existing tokens (USDC, SOL) into KYC-gated equivalents.
 
 Additionally import:
-- TypeScript: `@accredit/sdk` (includes `WrapperClient`)
+- TypeScript: `@fabrknt/accredit-sdk` (includes `WrapperClient`)
 - Programs: `compliant-wrapper`
 
 **Core + KYC Providers** — Your project integrates external identity providers (Civic, Worldcoin).
 
 Additionally import:
-- TypeScript: `@accredit/kyc-providers`
+- TypeScript: `@fabrknt/accredit-kyc-providers`
 
 ## Rust Integration
 
@@ -121,8 +121,8 @@ For **core only**:
 ```json
 {
   "dependencies": {
-    "@accredit/types": "workspace:*",
-    "@accredit/sdk": "workspace:*"
+    "@fabrknt/accredit-core": "workspace:*",
+    "@fabrknt/accredit-sdk": "workspace:*"
   }
 }
 ```
@@ -132,9 +132,9 @@ For **core + routing**:
 ```json
 {
   "dependencies": {
-    "@accredit/core": "workspace:*",
-    "@accredit/sdk": "workspace:*",
-    "@accredit/router": "workspace:*"
+    "@fabrknt/accredit-core": "workspace:*",
+    "@fabrknt/accredit-sdk": "workspace:*",
+    "@fabrknt/accredit-router": "workspace:*"
   }
 }
 ```
@@ -144,9 +144,9 @@ For **core + KYC providers**:
 ```json
 {
   "dependencies": {
-    "@accredit/core": "workspace:*",
-    "@accredit/sdk": "workspace:*",
-    "@accredit/kyc-providers": "workspace:*"
+    "@fabrknt/accredit-core": "workspace:*",
+    "@fabrknt/accredit-sdk": "workspace:*",
+    "@fabrknt/accredit-kyc-providers": "workspace:*"
   }
 }
 ```
@@ -167,7 +167,7 @@ cd ../your-project && pnpm install  # or yarn install
 
 ```typescript
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycClient, KycLevel } from '@accredit/sdk';
+import { KycClient, KycLevel } from '@fabrknt/accredit-sdk';
 
 const connection = new Connection(rpcUrl);
 const hookProgram = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
@@ -189,7 +189,7 @@ if (!result.isCompliant) {
 **Core: Derive PDAs for instruction building**
 
 ```typescript
-import { findWhitelistEntryPda, findKycRegistryPda } from '@accredit/sdk';
+import { findWhitelistEntryPda, findKycRegistryPda } from '@fabrknt/accredit-sdk';
 
 const [entryPda] = findWhitelistEntryPda(wallet, hookProgram);
 const [registryPda] = findKycRegistryPda(mint, hookProgram);
@@ -198,7 +198,7 @@ const [registryPda] = findKycRegistryPda(mint, hookProgram);
 **Routing: Get a compliant swap quote**
 
 ```typescript
-import { ComplianceAwareRouter } from '@accredit/router';
+import { ComplianceAwareRouter } from '@fabrknt/accredit-router';
 
 const router = new ComplianceAwareRouter(connection, registryAuthority);
 await router.syncWhitelist();
@@ -220,7 +220,7 @@ const quote = await router.getCompliantQuote(
 **Wrapper: Read wrapper configs**
 
 ```typescript
-import { WrapperClient } from '@accredit/sdk';
+import { WrapperClient } from '@fabrknt/accredit-sdk';
 
 const wrapperClient = new WrapperClient(
   connection,
@@ -242,7 +242,7 @@ const allConfigs = await wrapperClient.getAllWrapperConfigs();
 **KYC Providers: Verify via Civic and bridge to whitelist**
 
 ```typescript
-import { CivicProvider, KycProviderBridge } from '@accredit/kyc-providers';
+import { CivicProvider, KycProviderBridge } from '@fabrknt/accredit-kyc-providers';
 
 const civic = new CivicProvider(connection, gatekeeperNetworkKey);
 const bridge = new KycProviderBridge(
@@ -263,12 +263,12 @@ if (result) {
 
 ## Re-exporting Types
 
-If your SDK re-exports KYC types, import from `@accredit/types` and re-export:
+If your SDK re-exports KYC types, import from `@fabrknt/accredit-core` and re-export:
 
 ```typescript
 // your-project/packages/sdk/src/types.ts
-export { KycLevel, Jurisdiction } from '@accredit/types';
-export type { WhitelistEntry, KycRegistry } from '@accredit/types';
+export { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
+export type { WhitelistEntry, KycRegistry } from '@fabrknt/accredit-core';
 
 // Keep your project-specific types here
 export interface MyProjectSpecificType { ... }

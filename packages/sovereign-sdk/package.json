@@ -1,10 +1,10 @@
 {
-  "name": "@accredit/sovereign-sdk",
-  "version": "0.1.0",
+  "name": "@fabrknt/accredit-sovereign-sdk",
+  "version": "1.0.0",
   "description": "TypeScript SDK for SOVEREIGN identity and reputation protocol",
   "repository": {
     "type": "git",
-    "url": "https://github.com/psyto/accredit.git",
+    "url": "https://github.com/fabrknt/accredit.git",
     "directory": "packages/sovereign-sdk"
   },
   "author": "Fabrknt",
@@ -46,5 +46,9 @@
     "reputation",
     "sovereign",
     "accredit"
-  ]
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }

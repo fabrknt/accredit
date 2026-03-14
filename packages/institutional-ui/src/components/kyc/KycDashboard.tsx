@@ -1,5 +1,5 @@
-import type { WhitelistEntry } from '@accredit/core';
-import { Jurisdiction } from '@accredit/core';
+import type { WhitelistEntry } from '@fabrknt/accredit-core';
+import { Jurisdiction } from '@fabrknt/accredit-core';
 import { StatCard } from '../analytics/StatCard';
 import { KycEntryTable } from './KycEntryTable';
 import { KycBatchPanel } from './KycBatchPanel';

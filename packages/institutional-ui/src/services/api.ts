@@ -1,4 +1,4 @@
-import type { WhitelistEntry } from '@accredit/core';
+import type { WhitelistEntry } from '@fabrknt/accredit-core';
 import type {
   ComplianceResult,
   BatchResult,

@@ -19,7 +19,7 @@ Accredit is organized into four layers:
                         │           Accredit             │
                         │                                │
                         │  Core (chain-agnostic):        │
-                        │   @accredit/core               │
+                        │   @fabrknt/accredit-core               │
                         │   accredit-types crate         │
                         │                                │
                         │  Solana:                       │
@@ -27,14 +27,14 @@ Accredit is organized into four layers:
                         │   compliant-registry program   │
                         │   compliant-wrapper program    │
                         │   sovereign program            │
-                        │   @accredit/sdk                │
+                        │   @fabrknt/accredit-sdk                │
                         │                                │
                         │  Routing:                      │
-                        │   @accredit/router             │
+                        │   @fabrknt/accredit-router             │
                         │                                │
                         │  Identity:                     │
-                        │   @accredit/kyc-providers      │
-                        │   @accredit/institutional-ui   │
+                        │   @fabrknt/accredit-kyc-providers      │
+                        │   @fabrknt/accredit-institutional-ui   │
                         └───────────────┬───────────────-┘
                                         │
                        ┌────────────────┴───────────────┐
@@ -59,10 +59,10 @@ accredit/
 │   ├── compliant-wrapper/      # Asset wrapper — KYC-gated token wrapping (Solana)
 │   └── sovereign/              # Universal identity & multi-dimensional reputation (Solana)
 ├── packages/
-│   ├── core/                   # @accredit/core — Chain-agnostic TypeScript types
-│   ├── sdk/                    # @accredit/sdk — Solana PDA derivation + clients
-│   ├── router/                 # @accredit/router — Compliance-aware DEX routing
-│   ├── kyc-providers/          # @accredit/kyc-providers — Multi-provider KYC integration
+│   ├── core/                   # @fabrknt/accredit-core — Chain-agnostic TypeScript types
+│   ├── sdk/                    # @fabrknt/accredit-sdk — Solana PDA derivation + clients
+│   ├── router/                 # @fabrknt/accredit-router — Compliance-aware DEX routing
+│   ├── kyc-providers/          # @fabrknt/accredit-kyc-providers — Multi-provider KYC integration
 │   ├── sovereign-sdk/          # Sovereign identity SDK
 │   ├── qn-addon/               # Fabrknt On-Chain Compliance — QuickNode add-on
 │   └── institutional-ui/       # Institutional compliance dashboard (React)
@@ -71,17 +71,17 @@ accredit/
 
 ## Chain-Agnostic Types
 
-`@accredit/core` has zero chain-specific dependencies. All address fields use `string` (not `PublicKey`), making types consumable from any chain context:
+`@fabrknt/accredit-core` has zero chain-specific dependencies. All address fields use `string` (not `PublicKey`), making types consumable from any chain context:
 
 ```typescript
-import { KycLevel, Jurisdiction, isJurisdictionAllowed } from "@accredit/core";
-import type { WhitelistEntry, ComplianceCheckResult, Chain } from "@accredit/core";
+import { KycLevel, Jurisdiction, isJurisdictionAllowed } from "@fabrknt/accredit-core";
+import type { WhitelistEntry, ComplianceCheckResult, Chain } from "@fabrknt/accredit-core";
 
 // Chain type: "solana" | "evm"
 // All addresses are plain strings — Solana base58 or EVM hex
 ```
 
-Chain-specific SDKs (`@accredit/sdk` for Solana) convert between on-chain types and the chain-agnostic interfaces at the deserialization boundary.
+Chain-specific SDKs (`@fabrknt/accredit-sdk` for Solana) convert between on-chain types and the chain-agnostic interfaces at the deserialization boundary.
 
 ## Programs
 
@@ -138,17 +138,17 @@ See [docs/programs/sovereign.md](docs/programs/sovereign.md) for full reference.
 
 | Package | Description | Chain |
 |---------|-------------|-------|
-| `@accredit/core` | Shared type definitions (enums, interfaces, constants) | Agnostic |
-| `@accredit/sdk` | PDA derivation, `KycClient`, `RegistryClient`, `WrapperClient` | Solana |
-| `@accredit/router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Solana |
-| `@accredit/kyc-providers` | Multi-provider KYC integration (Civic, Worldcoin) | Agnostic |
+| `@fabrknt/accredit-core` | Shared type definitions (enums, interfaces, constants) | Agnostic |
+| `@fabrknt/accredit-sdk` | PDA derivation, `KycClient`, `RegistryClient`, `WrapperClient` | Solana |
+| `@fabrknt/accredit-router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Solana |
+| `@fabrknt/accredit-kyc-providers` | Multi-provider KYC integration (Civic, Worldcoin) | Agnostic |
 | `sovereign-sdk` | Sovereign identity SDK | Solana |
 | `fabrknt-onchain-compliance` | Fabrknt On-Chain Compliance — QuickNode add-on | Solana |
-| `@accredit/institutional-ui` | Institutional compliance dashboard | Solana |
+| `@fabrknt/accredit-institutional-ui` | Institutional compliance dashboard | Solana |
 
 ### KYC Providers
 
-The `@accredit/kyc-providers` package integrates external identity providers to lower user friction:
+The `@fabrknt/accredit-kyc-providers` package integrates external identity providers to lower user friction:
 
 - **Civic Pass** — Reads on-chain gateway tokens for liveness, ID verification, and uniqueness checks
 - **World ID** — Verifies zero-knowledge proof-of-personhood via the Worldcoin API
@@ -159,7 +159,7 @@ See [docs/sdk/kyc-providers.md](docs/sdk/kyc-providers.md) for usage guide.
 
 ### Institutional Dashboard
 
-The `@accredit/institutional-ui` package provides a React-based compliance dashboard for institutional users:
+The `@fabrknt/accredit-institutional-ui` package provides a React-based compliance dashboard for institutional users:
 
 - KYC management (whitelist entries, batch operations, provider verification)
 - Pool registry oversight (compliant pools, status tracking)
@@ -242,9 +242,9 @@ Then in your `package.json`:
 ```json
 {
   "dependencies": {
-    "@accredit/core": "workspace:*",
-    "@accredit/sdk": "workspace:*",
-    "@accredit/router": "workspace:*"
+    "@fabrknt/accredit-core": "workspace:*",
+    "@fabrknt/accredit-sdk": "workspace:*",
+    "@fabrknt/accredit-router": "workspace:*"
   }
 }
 ```
@@ -277,8 +277,8 @@ See [docs/integration.md](docs/integration.md) for detailed integration instruct
 - [Transfer Hook Program](docs/programs/transfer-hook.md) — Instruction reference and account contexts
 - [Compliant Registry Program](docs/programs/compliant-registry.md) — Pool management and route verification
 - [Compliant Wrapper Program](docs/programs/compliant-wrapper.md) — Asset wrapping and KYC-gated minting
-- [SDK Guide](docs/sdk/getting-started.md) — `@accredit/core` and `@accredit/sdk` usage
-- [Router Guide](docs/sdk/router.md) — `@accredit/router` compliance-aware routing
+- [SDK Guide](docs/sdk/getting-started.md) — `@fabrknt/accredit-core` and `@fabrknt/accredit-sdk` usage
+- [Router Guide](docs/sdk/router.md) — `@fabrknt/accredit-router` compliance-aware routing
 - [KYC Providers Guide](docs/sdk/kyc-providers.md) — Multi-provider KYC integration
 - [Institutional Dashboard](docs/sdk/institutional-ui.md) — Dashboard setup and usage
 - [Integration Guide](docs/integration.md) — Adding Accredit to your project

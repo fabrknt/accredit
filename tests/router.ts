@@ -11,7 +11,7 @@ import {
 const TRANSFER_HOOK_PROGRAM_ID = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
 const REGISTRY_PROGRAM_ID = new PublicKey('66tKcQqpv8GH2igWWBcLVrTjvo8cgpVJJAE8xadAgnYA');
 
-describe('@accredit/sdk PDA helpers', () => {
+describe('@fabrknt/accredit-sdk PDA helpers', () => {
   it('derives KYC registry PDA', () => {
     const mint = Keypair.generate().publicKey;
     const [pda, bump] = findKycRegistryPda(mint, TRANSFER_HOOK_PROGRAM_ID);

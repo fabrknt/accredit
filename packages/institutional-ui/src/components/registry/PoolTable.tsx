@@ -1,4 +1,4 @@
-import { Jurisdiction, KycLevel } from '@accredit/core';
+import { Jurisdiction, KycLevel } from '@fabrknt/accredit-core';
 import { DataTable, truncateAddress } from '../common/DataTable';
 import { StatusBadge } from '../common/StatusBadge';
 import type { ColumnDef, PoolStatusResponse } from '../../types';

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { KycLevel, Jurisdiction } from '@accredit/core';
-import type { WhitelistEntry } from '@accredit/core';
+import { KycLevel, Jurisdiction } from '@fabrknt/accredit-core';
+import type { WhitelistEntry } from '@fabrknt/accredit-core';
 import { KycDashboard } from '../components/kyc/KycDashboard';
 
 /** Generate sample KYC entries for development/demo */

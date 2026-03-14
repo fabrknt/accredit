@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { KycLevel } from '@accredit/core';
+import { KycLevel } from '@fabrknt/accredit-core';
 import { WrapperDashboard } from '../components/wrapper/WrapperDashboard';
 import type { WrapperConfig } from '../types';
 

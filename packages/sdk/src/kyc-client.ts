@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import type { KycLevel, Jurisdiction, WhitelistEntry, KycRegistry } from '@accredit/core';
+import type { KycLevel, Jurisdiction, WhitelistEntry, KycRegistry } from '@fabrknt/accredit-core';
 import { findKycRegistryPda, findWhitelistEntryPda } from './pda';
 
 /**

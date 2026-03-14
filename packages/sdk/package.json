@@ -1,6 +1,6 @@
 {
-  "name": "@accredit/sdk",
-  "version": "0.1.0",
+  "name": "@fabrknt/accredit-sdk",
+  "version": "1.0.0",
   "description": "SDK for Accredit KYC/AML compliance programs",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -21,7 +21,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@accredit/core": "workspace:*",
+    "@fabrknt/accredit-core": "workspace:*",
     "@coral-xyz/anchor": "^0.32.1",
     "@solana/web3.js": "^1.98.0"
   },
@@ -32,5 +32,9 @@
   "peerDependencies": {
     "@solana/web3.js": "^1.98.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  }
 }
