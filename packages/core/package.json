@@ -1,6 +1,6 @@
 {
   "name": "@fabrknt/accredit-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared KYC/AML compliance type definitions",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
