@@ -1,5 +1,8 @@
 # @fabrknt/accredit-core
 
+[![npm version](https://img.shields.io/npm/v/@fabrknt/accredit-core.svg)](https://www.npmjs.com/package/@fabrknt/accredit-core)
+[![npm downloads](https://img.shields.io/npm/dm/@fabrknt/accredit-core.svg)](https://www.npmjs.com/package/@fabrknt/accredit-core)
+
 Chain-agnostic KYC/AML compliance types and logic. Zero chain-specific dependencies.
 
 Not every DeFi protocol needs TradFi compliance -- but if yours does, you shouldn't have to rebuild from scratch. Fabrknt plugs into your existing protocol with composable SDKs and APIs. No permissioned forks, no separate deployments.
