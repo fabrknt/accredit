@@ -1,6 +1,11 @@
 # Accredit
 
+[![npm version](https://img.shields.io/npm/v/@fabrknt/accredit-core.svg)](https://www.npmjs.com/package/@fabrknt/accredit-core)
+[![npm downloads](https://img.shields.io/npm/dm/@fabrknt/accredit-core.svg)](https://www.npmjs.com/package/@fabrknt/accredit-core)
+
 Chain-agnostic KYC/AML compliance infrastructure. On-chain transfer enforcement, compliant DEX routing, asset wrapping, and multi-provider KYC integration as reusable building blocks for regulated token applications.
+
+Part of [Fabrknt](https://fabrknt.com) — plug-in compliance for existing DeFi protocols. `npm install @fabrknt/accredit-core`
 
 ## Overview
 
