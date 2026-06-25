@@ -12,6 +12,7 @@ interface CliOptions {
   json: boolean;
   counterparties: Address[];
   address: Address;
+  txCount?: number;
 }
 
 function parseArgs(argv: readonly string[]): CliOptions {
@@ -30,6 +31,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
   const counterparties: Address[] = [];
   let submit = false;
   let json = false;
+  let txCount: number | undefined;
 
   while (args.length > 0) {
     const arg = args.shift();
@@ -40,6 +42,19 @@ function parseArgs(argv: readonly string[]): CliOptions {
 
     if (arg === "--json") {
       json = true;
+      continue;
+    }
+
+    if (arg === "--tx-count") {
+      const value = args.shift();
+      if (value === undefined) {
+        throw new Error("Missing value after --tx-count.");
+      }
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        throw new Error("Invalid --tx-count value.");
+      }
+      txCount = Math.floor(parsed);
       continue;
     }
 
@@ -61,6 +76,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
     json,
     counterparties,
     address: normalizeAddress(addressArg),
+    txCount,
   };
 }
 
@@ -116,6 +132,7 @@ async function main(): Promise<void> {
     counterparties: options.counterparties,
     watchlist: loadWatchlist(),
     chain: publicClient ? createChainReader(publicClient) : undefined,
+    signals: options.txCount !== undefined ? { txCount: options.txCount } : undefined,
   });
 
   if (options.json) {
