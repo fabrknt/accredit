@@ -39,11 +39,16 @@ export interface RiskResult {
   modelRef: Hex;
 }
 
-export function runScorer(address: string, counterparties: string[] = []): Promise<RiskResult> {
+export function runScorer(
+  address: string,
+  counterparties: string[] = [],
+  txCount?: number,
+): Promise<RiskResult> {
   const scorerDir = path.join(process.cwd(), "..", "scorer");
   const bin = path.join(scorerDir, "node_modules", ".bin", "tsx");
   const args = ["src/cli.ts", "score", address];
   for (const c of counterparties) args.push("--counterparty", c);
+  if (txCount !== undefined) args.push("--tx-count", String(txCount));
   args.push("--json");
 
   return new Promise((resolve, reject) => {

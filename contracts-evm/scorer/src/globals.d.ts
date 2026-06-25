@@ -7,6 +7,7 @@ declare const process: {
   argv: string[];
   env: Record<string, string | undefined>;
   exitCode?: number;
+  stdout: { write: (s: string) => boolean };
 };
 
 declare module "node:fs/promises" {

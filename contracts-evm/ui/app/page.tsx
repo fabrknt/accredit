@@ -14,6 +14,7 @@ import { publicClient } from "@/lib/chain";
 import { addresses, demo, explorerAddress, hashkeyTestnet } from "@/lib/config";
 import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel, Onboard } from "@/components/Panels";
 import { OperatorNav } from "@/components/OperatorNav";
+import { AIOperator } from "@/components/AIOperator";
 
 export const dynamic = "force-dynamic";
 
@@ -408,6 +409,9 @@ export default async function Home() {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
         <HeaderCard />
+        <div id="grp-ai" className="scroll-mt-6 rounded-[28px] transition-shadow">
+          <AIOperator />
+        </div>
         <OperatorNav />
 
         <div id="grp-monitor" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
