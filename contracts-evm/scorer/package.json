@@ -1,0 +1,23 @@
+{
+  "name": "@fabrknt/accredit-aml-scorer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Off-chain AI-AML risk scorer that anchors verdicts on-chain via AmlOracle.attestRisk",
+  "type": "module",
+  "bin": {
+    "aml-score": "./src/cli.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "test": "vitest run",
+    "score": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
