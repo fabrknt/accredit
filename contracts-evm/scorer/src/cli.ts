@@ -1,0 +1,139 @@
+#!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
+import { getAddress } from "viem";
+
+import { createChainReader, createPublicChainClient, createWalletChainClient, submitAttestation } from "./chain.js";
+import { featureContribution, score } from "./model.js";
+import type { Address, Hex } from "./types.js";
+import watchlistData from "./watchlist.json" with { type: "json" };
+
+interface CliOptions {
+  submit: boolean;
+  counterparties: Address[];
+  address: Address;
+}
+
+function parseArgs(argv: readonly string[]): CliOptions {
+  const args = [...argv];
+  const command = args.shift();
+
+  if (command !== "score") {
+    throw new Error('Usage: aml-score score <address> [--counterparty <address>] [--submit]');
+  }
+
+  const addressArg = args.shift();
+  if (!addressArg) {
+    throw new Error("Missing address argument.");
+  }
+
+  const counterparties: Address[] = [];
+  let submit = false;
+
+  while (args.length > 0) {
+    const arg = args.shift();
+    if (arg === "--submit") {
+      submit = true;
+      continue;
+    }
+
+    if (arg === "--counterparty") {
+      const value = args.shift();
+      if (!value) {
+        throw new Error("Missing address after --counterparty.");
+      }
+
+      counterparties.push(normalizeAddress(value));
+      continue;
+    }
+
+    throw new Error(`Unknown argument: ${arg}`);
+  }
+
+  return {
+    submit,
+    counterparties,
+    address: normalizeAddress(addressArg),
+  };
+}
+
+function normalizeAddress(value: string): Address {
+  return getAddress(value).toLowerCase() as Address;
+}
+
+function loadWatchlist(): Set<Address> {
+  return new Set(watchlistData.map((entry) => normalizeAddress(entry)));
+}
+
+function requireEnv(name: "RPC_URL" | "AML_ORACLE_ADDRESS" | "SCORER_PRIVATE_KEY"): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable ${name}.`);
+  }
+
+  return value;
+}
+
+function printResult(result: Awaited<ReturnType<typeof score>>): void {
+  console.log(`Address:   ${result.address}`);
+  console.log(`Score:     ${result.score}`);
+  console.log(`Band:      ${result.band}`);
+  console.log(`Model Ref: ${result.modelRef}`);
+  console.log("");
+  console.log("Breakdown:");
+
+  for (const feature of result.breakdown) {
+    console.log(
+      `- ${feature.id}: raw=${feature.score} weight=${feature.weight} contribution=${featureContribution(feature)} :: ${feature.reason}`,
+    );
+  }
+
+  console.log("");
+  console.log("Reasons:");
+  if (result.reasons.length === 0) {
+    console.log("- No risk features fired.");
+    return;
+  }
+
+  for (const reason of result.reasons) {
+    console.log(`- ${reason}`);
+  }
+}
+
+async function main(): Promise<void> {
+  const options = parseArgs(process.argv.slice(2));
+  const rpcUrl = process.env.RPC_URL;
+  const publicClient = rpcUrl ? createPublicChainClient(rpcUrl) : undefined;
+  const result = await score({
+    address: options.address,
+    counterparties: options.counterparties,
+    watchlist: loadWatchlist(),
+    chain: publicClient ? createChainReader(publicClient) : undefined,
+  });
+
+  printResult(result);
+
+  if (!options.submit) {
+    console.log("");
+    console.log("Dry run only. Pass --submit to send attestRisk.");
+    return;
+  }
+
+  const walletClient = createWalletChainClient(
+    requireEnv("RPC_URL"),
+    requireEnv("SCORER_PRIVATE_KEY") as Hex,
+  );
+  const txHash = await submitAttestation(walletClient, normalizeAddress(requireEnv("AML_ORACLE_ADDRESS")), {
+    account: result.address,
+    score: result.score,
+    modelRef: result.modelRef,
+  });
+
+  console.log("");
+  console.log(`Submitted attestRisk tx: ${txHash}`);
+}
+
+main().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(message);
+  process.exitCode = 1;
+});
