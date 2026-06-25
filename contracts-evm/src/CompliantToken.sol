@@ -54,6 +54,15 @@ contract CompliantToken is ERC20, AccessControl {
         _burn(_msgSender(), amount);
     }
 
+    /// @notice Redeem (burn) another holder's balance using their ERC-20 allowance.
+    ///         Intended for wrappers that return underlying 1:1 after burning cHSP.
+    function burnFrom(address from, uint256 amount) external {
+        _spendAllowance(from, _msgSender(), amount);
+        (bool allowed, string memory reason) = compliance.canRedeem(from, amount);
+        require(allowed, reason);
+        _burn(from, amount);
+    }
+
     /// @notice Court-ordered / recovery move of frozen or compromised funds. Bypasses the
     ///         transfer gate by design, but is restricted to AGENT_ROLE and fully evented
     ///         so the action is auditable. Recipient must still be compliance-eligible.
