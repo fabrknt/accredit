@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { defaultFeatures } from "../src/features.js";
 import {
   bandForScore,
   clampScore,
-  DEFAULT_MODEL_ID,
-  DEFAULT_MODEL_VERSION,
   featureContribution,
+  getActiveModel,
   modelRefFor,
   score,
 } from "../src/model.js";
-import type { Address, Feature, FeatureResult, ScoringContext } from "../src/types.js";
+import trainingData from "../data/training.json" with { type: "json" };
+import { canonicalStringify, evaluateModel, heldOutRows, rowToVector } from "../src/training.js";
+import type { Address, ScoringContext, TrainingDataset } from "../src/types.js";
 import watchlistData from "../src/watchlist.json" with { type: "json" };
 
 const CLEAN_ADDRESS = "0x2222222222222222222222222222222222222222" as Address;
@@ -26,15 +26,6 @@ function makeContext(overrides: Partial<ScoringContext> = {}): ScoringContext {
   };
 }
 
-function fixedFeature(id: string, weight: number, rawScore: number): Feature {
-  return (): FeatureResult => ({
-    id,
-    weight,
-    score: rawScore,
-    reason: `${id} fired`,
-  });
-}
-
 describe("model", () => {
   it("maps 24/25 and 49/50 to the correct bands", () => {
     expect(bandForScore(24)).toBe("low");
@@ -48,28 +39,38 @@ describe("model", () => {
     expect(clampScore(105)).toBe(100);
   });
 
-  it("produces a stable 32-byte modelRef", () => {
-    const modelRef = modelRefFor({ modelId: DEFAULT_MODEL_ID, version: DEFAULT_MODEL_VERSION });
-    expect(modelRef).toMatch(/^0x[0-9a-f]{64}$/);
-    expect(modelRef).toBe("0xa605e19646d125a3d75b65c6b041bb22eed13f7907d11320de05ac591ec5ba64");
+  it("produces a stable 32-byte modelRef from canonical model.json", () => {
+    const model = getActiveModel();
+    const ref = modelRefFor(model);
+
+    expect(canonicalStringify(model)).toContain("\"featureNames\"");
+    expect(ref).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(ref).toBe(modelRefFor());
   });
 
-  it("scores a watchlisted address as high risk", async () => {
-    const result = await score(makeContext({ address: WATCHLISTED_ADDRESS }), {
-      modelId: DEFAULT_MODEL_ID,
-      version: DEFAULT_MODEL_VERSION,
-      features: defaultFeatures,
-    });
+  it("scores a clearly illicit vector as high risk", async () => {
+    const result = await score(
+      makeContext({
+        counterparties: [
+          WATCHLISTED_ADDRESS,
+          WATCHLISTED_ADDRESS,
+          CLEAN_ADDRESS,
+          CLEAN_ADDRESS,
+          CLEAN_ADDRESS,
+          CLEAN_ADDRESS,
+        ],
+        signals: { txCount: 30, hasCode: false },
+      }),
+    );
 
     expect(result.score).toBeGreaterThanOrEqual(50);
     expect(result.band).toBe("high");
   });
 
-  it("scores a clean address as low risk", async () => {
+  it("scores a clearly benign vector as low risk", async () => {
     const result = await score(
       makeContext({
-        address: CLEAN_ADDRESS,
-        counterparties: [],
+        counterparties: [CLEAN_ADDRESS, CLEAN_ADDRESS],
         signals: { txCount: 6, hasCode: false },
       }),
     );
@@ -78,31 +79,55 @@ describe("model", () => {
     expect(result.band).toBe("low");
   });
 
-  it("aggregates feature contributions deterministically", async () => {
-    const result = await score(makeContext(), {
-      modelId: "test",
-      version: "1",
-      features: [fixedFeature("a", 24, 100), fixedFeature("b", 26, 100)],
-    });
-
-    const first = result.breakdown[0];
-    const second = result.breakdown[1];
-
-    expect(first).toBeDefined();
-    expect(second).toBeDefined();
-    expect(featureContribution(first as FeatureResult)).toBe(24);
-    expect(featureContribution(second as FeatureResult)).toBe(26);
-    expect(result.score).toBe(50);
-    expect(result.band).toBe("high");
-  });
-
-  it("clamps the aggregated total to 100", async () => {
-    const result = await score(makeContext(), {
-      modelId: "overflow",
-      version: "1",
-      features: [fixedFeature("overflow", 150, 100)],
-    });
+  it("forces sanctioned_direct to 100 regardless of the model", async () => {
+    const result = await score(
+      makeContext({
+        address: WATCHLISTED_ADDRESS,
+        counterparties: [],
+        signals: { txCount: 0, hasCode: false },
+      }),
+    );
 
     expect(result.score).toBe(100);
+    expect(result.band).toBe("high");
+    expect(result.reasons[0]).toContain("watchlist");
+  });
+
+  it("keeps final score clamped to 0..100", async () => {
+    const result = await score(
+      makeContext({
+        counterparties: new Array(40).fill(WATCHLISTED_ADDRESS) as Address[],
+        signals: { txCount: 99, hasCode: false },
+      }),
+    );
+
+    expect(result.score).toBeGreaterThanOrEqual(0);
+    expect(result.score).toBeLessThanOrEqual(100);
+  });
+
+  it("surfaces sign-aware feature contributions", async () => {
+    const result = await score(
+      makeContext({
+        counterparties: [WATCHLISTED_ADDRESS, CLEAN_ADDRESS, CLEAN_ADDRESS, CLEAN_ADDRESS],
+        signals: { txCount: 18, hasCode: false },
+      }),
+    );
+
+    const exposure = result.breakdown.find((feature) => feature.id === "sanctioned_exposure_ratio");
+    expect(exposure).toBeDefined();
+    expect(featureContribution(exposure!)).not.toBe(0);
+  });
+
+  it("reports held-out accuracy above 0.8", () => {
+    const dataset = trainingData as TrainingDataset;
+    const holdout = heldOutRows(dataset);
+    const metrics = evaluateModel(
+      getActiveModel(),
+      holdout.map(rowToVector),
+      holdout.map((row) => row.label),
+    );
+
+    expect(metrics.total).toBeGreaterThan(0);
+    expect(metrics.accuracy).toBeGreaterThan(0.8);
   });
 });

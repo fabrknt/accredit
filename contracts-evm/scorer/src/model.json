@@ -1,0 +1,1 @@
+{"bias":-2.141904,"featureNames":["sanctioned_exposure","sanctioned_exposure_ratio","counterparty_count","velocity","account_newness"],"mean":[50,18.892361,38.402778,38.020833,15.104167],"std":[50,23.612295,21.124242,36.380124,32.638427],"threshold":0.69,"version":"1.0.0","weights":[2.808322,0.712598,2.307255,1.75198,3.82894]}

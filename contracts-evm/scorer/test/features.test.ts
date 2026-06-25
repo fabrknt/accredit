@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   accountNewnessFeature,
+  counterpartyCountFeature,
   sanctionedDirectFeature,
   sanctionedExposureFeature,
+  sanctionedExposureRatioFeature,
   velocityFeature,
 } from "../src/features.js";
 import type { Address, ScoringContext } from "../src/types.js";
@@ -25,15 +27,28 @@ describe("features", () => {
   it("fires sanctioned_direct for a watchlisted address", async () => {
     const result = await sanctionedDirectFeature(makeContext({ address: WATCHLISTED_ADDRESS }));
     expect(result.score).toBe(100);
-    expect(result.weight).toBe(60);
   });
 
-  it("fires sanctioned_exposure for watchlisted counterparties", async () => {
+  it("captures binary and ratio sanctions exposure", async () => {
     const result = await sanctionedExposureFeature(
       makeContext({ counterparties: [WATCHLISTED_ADDRESS, CLEAN_ADDRESS] }),
     );
+    const ratio = await sanctionedExposureRatioFeature(
+      makeContext({ counterparties: [WATCHLISTED_ADDRESS, CLEAN_ADDRESS] }),
+    );
+
     expect(result.score).toBe(100);
-    expect(result.weight).toBe(25);
+    expect(ratio.score).toBe(50);
+  });
+
+  it("scales counterparty_count to a normalized 0..100 range", async () => {
+    const low = await counterpartyCountFeature(makeContext({ counterparties: [CLEAN_ADDRESS] }));
+    const high = await counterpartyCountFeature(
+      makeContext({ counterparties: new Array(30).fill(CLEAN_ADDRESS) as Address[] }),
+    );
+
+    expect(low.score).toBe(5);
+    expect(high.score).toBe(100);
   });
 
   it("fires velocity at medium and high thresholds", async () => {

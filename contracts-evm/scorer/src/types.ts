@@ -34,10 +34,14 @@ export interface ScoringContext {
 /** One feature's contribution to the risk score. */
 export interface FeatureResult {
   id: string;
-  /** Relative weight of this feature. */
+  /** Model weight or override weight surfaced for explainability. */
   weight: number;
   /** This feature's raw 0–100 risk reading. */
   score: number;
+  /** Optional standardized value used by the trained model. */
+  standardized?: number;
+  /** Optional sign-aware contribution to the model logit. */
+  contribution?: number;
   /** Human-readable explanation of why it fired. */
   reason: string;
 }
@@ -60,6 +64,31 @@ export interface ModelConfig {
   modelId: string;
   version: string;
   features: readonly Feature[];
+}
+
+export interface TrainedModel {
+  version: string;
+  featureNames: string[];
+  mean: number[];
+  std: number[];
+  weights: number[];
+  bias: number;
+  threshold: number;
+}
+
+export interface TrainingRow {
+  features: Record<string, number>;
+  label: 0 | 1;
+}
+
+export interface TrainingDataset {
+  datasetVersion: string;
+  note: string;
+  distributions: {
+    benign: string[];
+    illicit: string[];
+  };
+  rows: TrainingRow[];
 }
 
 export interface SubmitAttestationParams {
