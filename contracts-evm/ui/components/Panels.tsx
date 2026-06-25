@@ -141,9 +141,9 @@ export function PaymentSimulator({ alice, bob, dead }: { alice: string; bob: str
 
   return (
     <section className={card}>
-      <p className={label}>Payment Simulator</p>
-      <h2 className="mt-2 text-xl font-semibold text-white">Alice pays in cHSP — enforced at the contract</h2>
-      <p className="mt-1 text-sm text-slate-400">Compliance enforced at the moment of transfer.</p>
+      <p className={label}>Transfer Policy & Enforcement</p>
+      <h2 className="mt-2 text-xl font-semibold text-white">Check a transfer — and watch it enforced</h2>
+      <p className="mt-1 text-sm text-slate-400">Compliance is enforced at the moment of transfer; flagged recipients are blocked.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
         <div>
           <div className="mb-1 text-xs text-slate-400">Recipient</div>
@@ -206,6 +206,62 @@ export function AgentConsole({ alice, dead }: { alice: string; dead: string }) {
       </div>
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {tx && <p className="mt-3 text-sm text-slate-300">Done: <TxLink hash={tx} /></p>}
+    </section>
+  );
+}
+
+export function Onboard() {
+  const router = useRouter();
+  const [address, setAddress] = useState("");
+  const [kycLevel, setKycLevel] = useState("2");
+  const [jurisdiction, setJurisdiction] = useState("392");
+  const [result, setResult] = useState<{ score: number; band: string } | null>(null);
+  const [tx, setTx] = useState<Hex | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onboard() {
+    setBusy(true); setError(null); setTx(null); setResult(null);
+    const r = await postJson("/api/onboard", {
+      address,
+      kycLevel: Number(kycLevel),
+      jurisdiction: Number(jurisdiction),
+    });
+    setBusy(false);
+    if (r.error) return setError(r.error);
+    setResult({ score: r.score, band: r.band });
+    setTx(r.amlHash ?? r.regHash);
+    router.refresh();
+  }
+
+  return (
+    <section className={card}>
+      <p className={label}>Onboard</p>
+      <h2 className="mt-2 text-xl font-semibold text-white">KYC-register a new participant</h2>
+      <p className="mt-1 text-sm text-slate-400">Verify identity and run the initial AML screen — required before holding cHSP.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+        <div>
+          <div className="mb-1 text-xs text-slate-400">Address</div>
+          <input className={input} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x…" />
+        </div>
+        <div>
+          <div className="mb-1 text-xs text-slate-400">KYC level</div>
+          <input className={`${input} w-24`} value={kycLevel} onChange={(e) => setKycLevel(e.target.value)} />
+        </div>
+        <div>
+          <div className="mb-1 text-xs text-slate-400">Jurisdiction</div>
+          <input className={`${input} w-28`} value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} />
+        </div>
+      </div>
+      <div className="mt-4">
+        <button className={btn} onClick={onboard} disabled={busy || !address}>Onboard (register + screen)</button>
+      </div>
+      {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+      {result && (
+        <p className="mt-3 text-sm text-slate-300">
+          Onboarded — initial AML score {result.score} ({result.band}). {tx && <TxLink hash={tx} />}
+        </p>
+      )}
     </section>
   );
 }
