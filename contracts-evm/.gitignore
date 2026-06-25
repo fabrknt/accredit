@@ -1,12 +1,15 @@
-# Foundry
-out/
-cache/
-broadcast/
+# Foundry (anchored to this dir so they don't bleed into ui/ etc.)
+/out/
+/cache/
+/broadcast/
 
-# Dependencies (re-install with `forge install`; see README)
-lib/
+# Foundry dependencies (re-install with `forge install`; see README).
+# Anchored so it does NOT match ui/lib/ or scorer source.
+/lib/
 
-# Secrets — never commit keys
+# Secrets — never commit keys (any depth). Allow .example templates.
 .env
 .env.*
 !.env.example
+!*.env.example
+!.env.local.example
