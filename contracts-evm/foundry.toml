@@ -1,0 +1,23 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+optimizer = true
+optimizer_runs = 200
+remappings = [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+# HashKey Chain — verified live 2026-06-25
+# testnet chainId 133 (0x85), mainnet chainId 177 (0xb1)
+[rpc_endpoints]
+hashkey_testnet = "https://testnet.hsk.xyz"
+hashkey_mainnet = "https://mainnet.hsk.xyz"
+
+[etherscan]
+hashkey_testnet = { key = "${HASHKEY_EXPLORER_KEY}", url = "https://testnet-explorer.hsk.xyz/api", chain = 133 }
+hashkey_mainnet = { key = "${HASHKEY_EXPLORER_KEY}", url = "https://hashkey.blockscout.com/api", chain = 177 }
+
+# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

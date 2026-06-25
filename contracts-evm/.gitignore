@@ -1,0 +1,12 @@
+# Foundry
+out/
+cache/
+broadcast/
+
+# Dependencies (re-install with `forge install`; see README)
+lib/
+
+# Secrets — never commit keys
+.env
+.env.*
+!.env.example
