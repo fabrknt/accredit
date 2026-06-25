@@ -27,6 +27,22 @@ export function AIOperator() {
   const [escalations, setEscalations] = useState<Esc[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [resolved, setResolved] = useState<Record<string, string>>({});
+  const [resetting, setResetting] = useState(false);
+
+  async function resetDemo() {
+    setResetting(true); setError(null);
+    try {
+      const res = await fetch("/api/reset", { method: "POST" });
+      const j = await res.json();
+      if (j.error) { setError(j.error); return; }
+      setLog(null); setMetrics(null); setEscalations([]); setResolved({});
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "reset failed");
+    } finally {
+      setResetting(false);
+    }
+  }
 
   async function runSweep() {
     setBusy(true); setError(null);
@@ -69,11 +85,18 @@ export function AIOperator() {
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button className={btn} onClick={runSweep} disabled={busy}>Run compliance sweep</button>
+        <button className={btn} onClick={runSweep} disabled={busy || resetting}>Run compliance sweep</button>
+        <button className={btnGhost} onClick={resetDemo} disabled={busy || resetting} title="Revoke + unfreeze the demo cohort for a clean first-run">Reset demo</button>
         {busy && (
           <span className="inline-flex items-center gap-2 text-sm text-sky-200">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-200" aria-hidden />
             Screening cohort &amp; executing on-chain… (~1 min)
+          </span>
+        )}
+        {resetting && (
+          <span className="inline-flex items-center gap-2 text-sm text-slate-300">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-slate-200" aria-hidden />
+            Resetting demo cohort…
           </span>
         )}
       </div>
