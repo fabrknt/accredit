@@ -32,6 +32,15 @@ async function postJson(url: string, body: unknown) {
 
 const explorerTx = (h: string) => `https://testnet-explorer.hsk.xyz/tx/${h}`;
 
+function Processing({ label = "Processing — waiting for the transaction…" }: { label?: string }) {
+  return (
+    <span className="mt-3 inline-flex items-center gap-2 text-sm text-sky-200">
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-200" aria-hidden />
+      {label}
+    </span>
+  );
+}
+
 function TxLink({ hash }: { hash: Hex }) {
   return (
     <a href={explorerTx(hash)} target="_blank" rel="noreferrer" className="font-mono text-xs text-sky-200 hover:text-sky-100">
@@ -90,6 +99,7 @@ export function AmlScreening({ dead }: { dead: string }) {
         <button className={btn} onClick={score} disabled={busy}>Run scorer</button>
         <button className={btnGhost} onClick={anchor} disabled={busy || !result}>Anchor on-chain (attestRisk)</button>
       </div>
+      {busy && <Processing />}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {tx && <p className="mt-3 text-sm text-slate-300">Anchored: <TxLink hash={tx} /></p>}
       {result && (
@@ -160,6 +170,7 @@ export function PaymentSimulator({ alice, bob, dead }: { alice: string; bob: str
         <button className={btn} onClick={() => preview()} disabled={busy}>Check</button>
         <button className={btn} onClick={() => execute()} disabled={busy}>Execute</button>
       </div>
+      {busy && <Processing />}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {check && (
         <div className={`mt-4 rounded-2xl px-4 py-3 text-sm ${check.allowed ? "bg-emerald-500/10 text-emerald-100 ring-1 ring-emerald-400/20" : "bg-rose-500/10 text-rose-100 ring-1 ring-rose-400/20"}`}>
@@ -204,6 +215,7 @@ export function AgentConsole({ alice, dead }: { alice: string; dead: string }) {
         <button className={btn} onClick={() => setFrozen(true)} disabled={busy}>Freeze</button>
         <button className={btnGhost} onClick={() => setFrozen(false)} disabled={busy}>Unfreeze</button>
       </div>
+      {busy && <Processing />}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {tx && <p className="mt-3 text-sm text-slate-300">Done: <TxLink hash={tx} /></p>}
     </section>
@@ -256,6 +268,7 @@ export function Onboard() {
       <div className="mt-4">
         <button className={btn} onClick={onboard} disabled={busy || !address}>Onboard (register + screen)</button>
       </div>
+      {busy && <Processing />}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {result && (
         <p className="mt-3 text-sm text-slate-300">
@@ -295,6 +308,7 @@ export function WrapPanel() {
         <button className={btn} onClick={() => go("wrap")} disabled={busy}>Wrap</button>
         <button className={btnGhost} onClick={() => go("unwrap")} disabled={busy}>Unwrap</button>
       </div>
+      {busy && <Processing />}
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
       {tx && <p className="mt-3 text-sm text-slate-300">Done: <TxLink hash={tx} /></p>}
     </section>
