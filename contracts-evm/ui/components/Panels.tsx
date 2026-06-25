@@ -75,6 +75,7 @@ export function AmlScreening({ dead }: { dead: string }) {
     <section className={card}>
       <p className={label}>AI-AML Screening</p>
       <h2 className="mt-2 text-xl font-semibold text-white">Score an address, anchor the verdict on-chain</h2>
+      <p className="mt-1 text-sm text-slate-400">The AI that decides: explainable, and anchored on-chain.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div>
           <div className="mb-1 text-xs text-slate-400">Address</div>
@@ -142,6 +143,7 @@ export function PaymentSimulator({ alice, bob, dead }: { alice: string; bob: str
     <section className={card}>
       <p className={label}>Payment Simulator</p>
       <h2 className="mt-2 text-xl font-semibold text-white">Alice pays in cHSP — enforced at the contract</h2>
+      <p className="mt-1 text-sm text-slate-400">Compliance enforced at the moment of transfer.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
         <div>
           <div className="mb-1 text-xs text-slate-400">Recipient</div>
@@ -189,6 +191,7 @@ export function AgentConsole({ alice, dead }: { alice: string; dead: string }) {
     <section className={card}>
       <p className={label}>Agent Console</p>
       <h2 className="mt-2 text-xl font-semibold text-white">Freeze / unfreeze (ERC-3643 agent power)</h2>
+      <p className="mt-1 text-sm text-slate-400">Regulator-grade controls: freeze and recover.</p>
       <div className="mt-4">
         <div className="mb-1 text-xs text-slate-400">Address</div>
         <input className={input} value={address} onChange={(e) => setAddress(e.target.value)} />
@@ -227,6 +230,7 @@ export function WrapPanel() {
     <section className={card}>
       <p className={label}>Compliant Wrapping</p>
       <h2 className="mt-2 text-xl font-semibold text-white">Wrap HSP → cHSP 1:1 (compliance-gated)</h2>
+      <p className="mt-1 text-sm text-slate-400">Pull existing HSP liquidity into the compliance layer, 1:1.</p>
       <div className="mt-4">
         <div className="mb-1 text-xs text-slate-400">Amount</div>
         <input className={`${input} w-40`} value={amount} onChange={(e) => setAmount(e.target.value)} />
