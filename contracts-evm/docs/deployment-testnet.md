@@ -1,15 +1,17 @@
 # Deployment — HashKey Chain Testnet (chainId 133)
 
-Deployed 2026-06-25. Explorer: https://testnet-explorer.hsk.xyz
+Deployed 2026-06-25 (full stack incl. CompliantWrapper). Explorer: https://testnet-explorer.hsk.xyz
 
 ## Contracts
 
 | Contract | Address | Explorer |
 |---|---|---|
-| IdentityRegistry | `0xc513899e54e0b8f3b0775ace8a0cf9b4a185ed77` | https://testnet-explorer.hsk.xyz/address/0xc513899e54e0b8f3b0775ace8a0cf9b4a185ed77 |
-| AmlOracle | `0xbc56838b2f04986ff450be96bc5286ad9e3b679c` | https://testnet-explorer.hsk.xyz/address/0xbc56838b2f04986ff450be96bc5286ad9e3b679c |
-| ModularCompliance | `0x6af907e8879ffafb87c0e21e5078fa63335ac27a` | https://testnet-explorer.hsk.xyz/address/0x6af907e8879ffafb87c0e21e5078fa63335ac27a |
-| CompliantToken (cHSP) | `0xf7d8fde15afd893a09aef4dd6a7d92cafc7fdbd8` | https://testnet-explorer.hsk.xyz/address/0xf7d8fde15afd893a09aef4dd6a7d92cafc7fdbd8 |
+| IdentityRegistry | `0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63` | https://testnet-explorer.hsk.xyz/address/0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63 |
+| AmlOracle | `0x828976cc4ca8c4d243c5a6c4366145c1f499d70c` | https://testnet-explorer.hsk.xyz/address/0x828976cc4ca8c4d243c5a6c4366145c1f499d70c |
+| ModularCompliance | `0x4be4dd8a745d8d72842c77e9849eda0691529c53` | https://testnet-explorer.hsk.xyz/address/0x4be4dd8a745d8d72842c77e9849eda0691529c53 |
+| CompliantToken (cHSP) | `0x0457d8336917075838d0acd76862f057a132d308` | https://testnet-explorer.hsk.xyz/address/0x0457d8336917075838d0acd76862f057a132d308 |
+| MockHSP (test underlying) | `0x697953a4400d78c65a93844b271b6eae5397cbe9` | https://testnet-explorer.hsk.xyz/address/0x697953a4400d78c65a93844b271b6eae5397cbe9 |
+| CompliantWrapper | `0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49` | https://testnet-explorer.hsk.xyz/address/0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49 |
 
 ## Demo state (seeded by Bootstrap.s.sol)
 
@@ -18,26 +20,28 @@ Deployed 2026-06-25. Explorer: https://testnet-explorer.hsk.xyz
 - `0x…dead` — watchlisted; AI-AML scorer attested risk **65 (high)** on-chain, then KYC'd
   to isolate AML as the blocker.
 
-## End-to-end proof (read live from chain)
+## End-to-end proofs (read live from chain)
 
+**AI-AML transfer gate:**
 ```
 AmlOracle.riskOf(dead)               = (65, <ts>, 0xa605…ba64)   # AI score anchored on-chain
-AmlOracle.isClean(dead,50,30d)       = false
 ModularCompliance.canTransfer(alice→bob)  = (true,  "")
 ModularCompliance.canTransfer(alice→dead) = (false, "recipient failed AML screen")
 ```
 
-The AI-AML scorer computed the risk off-chain, anchored the verdict via
-`AmlOracle.attestRisk`, and the compliance engine then blocks a transfer to the flagged
-address — the full "compliance-enforced payments + AI-AML screening" loop, live.
+**1:1 compliant wrapping (HSP → cHSP):** deployer wrapped 300 MockHSP → 300 cHSP, then
+unwrapped 100 → final deployer 200 cHSP / 300 MockHSP, wrapper holds 200 MockHSP (1:1 backing).
 
 ## Transactions
 
-- Deploy (4 contracts): `broadcast/Deploy.s.sol/133/run-latest.json`
+- Deploy (4 core contracts): `broadcast/Deploy.s.sol/133/run-latest.json`
 - Bootstrap (seed identities/AML/mint): `broadcast/Bootstrap.s.sol/133/run-latest.json`
-- AI-AML `attestRisk(dead, 65)`: `0x08ad74656cb5d90e2e72d7841e406075e2b456525a914d3aae2d51ea52c6dc21`
-- `registerIdentity(dead)`: `0xd83eba72543836194d1beddd1ae20da20d2df261ac06c2d7650ac26824cb6c7a`
+- DeployWrapper (MockHSP + wrapper + grant ISSUER_ROLE): `broadcast/DeployWrapper.s.sol/133/run-latest.json`
+- AI-AML `attestRisk(dead, 65)`: `0xfd41da3c9716cc9212926b23bb2779642dfafeeef36f48f459cced2b0ca2cf4b`
 
 ## Reproduce
 
 See `docs/runbook-testnet.md`. Deployer key is in gitignored `.env` (throwaway testnet account).
+
+> Note: an earlier partial deployment (core only, pre-`burnFrom`) was superseded by this
+> full-stack redeploy so that wrapper unwrap (which calls `cHSP.burnFrom`) works on-chain.
