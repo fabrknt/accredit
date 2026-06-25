@@ -1,55 +1,84 @@
-# accredit — HashKey Chain (EVM) compliance stack
+# accredit — the AI that runs compliance operations on HashKey
 
-EVM rebuild of accredit's on-chain compliance enforcement, targeting the **HashKey
-Chain Horizon Hackathon (Tokyo, Jun 18–Jul 11 2026)**. Axis: **compliance-enforced
-HSP payments + AI-AML transfer screening**.
+**HashKey Chain Horizon Hackathon (Tokyo, 2026) submission.** Tracks: AI × DeFi.
 
-The chain-agnostic core, KYC providers, and institutional UI are reused from the
-parent monorepo (TypeScript). Only the on-chain layer is rebuilt here in Solidity,
-mapping accredit's Solana programs onto an ERC-3643-style design.
+On a regulated chain like HashKey the compliance *primitives* already exist (ERC-3643
+permissioned tokens, AML intel like MistTrack, ZKID). What doesn't scale is the
+**operations**: a human officer monitoring wallets, screening, deciding, acting, logging.
+**accredit is the AI operator on top of those primitives** — it automates the compliance
+operating loop with a **human-in-the-loop**, escalating only the calls a human must make.
 
-## Contracts (Day 1 skeleton — compiles, 13/13 tests pass)
+→ Full pitch: [`docs/pitch.md`](docs/pitch.md) · Demo script: [`docs/demo-script.md`](docs/demo-script.md)
+· Operator policy spec: [`docs/ai-operator-spec.md`](docs/ai-operator-spec.md)
 
-Cross-reviewed by Claude Code + Codex (3 rounds). All holder-controlled value paths
-(transfer, transferFrom, burn) are compliance-gated; `forcedTransfer` is AGENT-only and
-evented; `mint` is gated so supply can never reach an unverified/sanctioned/frozen address.
+## Live on HashKey Chain testnet (chainId 133)
 
-| Solidity | Maps from (Solana) | Role |
-|---|---|---|
-| `IdentityRegistry.sol` | `compliant-registry` | KYC claims (level, jurisdiction, expiry) + freeze, written by the off-chain KYC bridge (`AGENT_ROLE`) |
-| `AmlOracle.sol` | *(new — AI×DeFi bridge)* | Per-address AML risk attestations written by the off-chain AI scorer (`SCORER_ROLE`) |
-| `ModularCompliance.sol` | compliance logic in `transfer-hook` | Gates: `canTransfer` (both parties KYC+AML+limit), `canReceive` (mint), `canRedeem` (burn: freeze+AML, KYC-lapse exempt to avoid fund-trapping) |
-| `CompliantToken.sol` | `transfer-hook` (Token-2022) | ERC-20 (cHSP). P2P gated via `_update`; `mint`/`burn` gated; `forcedTransfer` = agent recovery (evented) |
+Explorer: https://testnet-explorer.hsk.xyz
 
-### Agent / issuer powers (ERC-3643-style)
-- `IdentityRegistry.setAddressFrozen` — freeze blocks send AND receive AND redeem.
-- `CompliantToken.forcedTransfer` — court-ordered recovery of frozen/compromised funds.
-- Redemption carve-out: a holder with merely lapsed KYC can still `burn` (redeem) their own funds; frozen/sanctioned holders cannot.
+| Contract | Address |
+|---|---|
+| IdentityRegistry | [`0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63`](https://testnet-explorer.hsk.xyz/address/0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63) |
+| AmlOracle | [`0x828976cc4ca8c4d243c5a6c4366145c1f499d70c`](https://testnet-explorer.hsk.xyz/address/0x828976cc4ca8c4d243c5a6c4366145c1f499d70c) |
+| ModularCompliance | [`0x4be4dd8a745d8d72842c77e9849eda0691529c53`](https://testnet-explorer.hsk.xyz/address/0x4be4dd8a745d8d72842c77e9849eda0691529c53) |
+| CompliantToken (cHSP) | [`0x0457d8336917075838d0acd76862f057a132d308`](https://testnet-explorer.hsk.xyz/address/0x0457d8336917075838d0acd76862f057a132d308) |
+| MockHSP (test underlying) | [`0x697953a4400d78c65a93844b271b6eae5397cbe9`](https://testnet-explorer.hsk.xyz/address/0x697953a4400d78c65a93844b271b6eae5397cbe9) |
+| CompliantWrapper | [`0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49`](https://testnet-explorer.hsk.xyz/address/0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49) |
 
-### Known roadmap gaps (Day 2+, flagged in review)
-- Identity/wallet separation + trusted-issuer claims (full ONCHAINID model) — currently per-address.
-- Richer transfer-level AML context (velocity, linked-wallet clustering, travel-rule) — on-chain anchors the verdict, the off-chain AI owns the richness.
+Deployment record (incl. tx hashes): [`docs/deployment-testnet.md`](docs/deployment-testnet.md).
 
-## HashKey Chain — verified live 2026-06-25
+## What's here
 
-- **Testnet** chainId `133` (0x85), RPC `https://testnet.hsk.xyz`, explorer `https://testnet-explorer.hsk.xyz`
-- **Mainnet** chainId `177` (0xb1), RPC `https://mainnet.hsk.xyz`, explorer `https://hashkey.blockscout.com`
-- Standard OP-stack L2 (predeploys at `0x4200...`); native gas token **HSK**.
-- HSP = **HashKey Stablecoin Program** (PayFi settlement). Exact stablecoin token
-  address still TODO (docs "Token Contracts" page); MVP can deploy its own cHSP.
+- **`src/`** — the on-chain compliance stack (Solidity, ERC-3643-style), the AI operator's tools:
+  - `IdentityRegistry` (KYC claims + freeze), `AmlOracle` (on-chain AML risk attestations),
+    `ModularCompliance` (transfer/receive/redeem gates), `CompliantToken` (cHSP),
+    `CompliantWrapper` (1:1 HSP→cHSP), `MockHSP`. **22 Foundry tests.**
+- **`scorer/`** — the off-chain AI-AML risk model: a deterministic, explainable logistic-regression
+  classifier (trained, held-out acc ~0.97); its model hash is anchored on-chain as `modelRef`.
+- **`ui/`** — the compliance operator console (Next.js): a live dashboard with the **AI Compliance
+  Operator** (one-click sweep → screen everyone, auto-resolve routine, escalate to a human review
+  queue) plus the manual tools (screen / transfer policy / freeze / onboard / wrap).
 
-## Build / test / deploy
+## The AI operator (the core)
+
+One **compliance sweep** (`/api/sweep`) screens the whole cohort, applies policy, and acts on-chain:
+
+| Outcome | AI action |
+|---|---|
+| Clean | auto-onboard + anchor verdict |
+| Watch (elevated) | auto-anchor + monitor |
+| High (model-flagged) | auto-anchor verdict; **escalate freeze to a human** |
+| Sanctions (confirmed list hit) | **auto-freeze** (contain) + **escalate recovery to a human** |
+| Any irreversible value move | **never auto — human-approved** |
+
+Live run: **5 screened / 100% coverage / 3 auto-resolved / 2 escalated / ~1 min** (vs ~15 min by
+hand), every action a real on-chain tx with a full decision log. The AI proposes; the human disposes.
+
+## Run it
 
 ```bash
-forge build
-forge test
-# deploy (needs a funded key + testnet faucet):
-PRIVATE_KEY=0x... forge script script/Deploy.s.sol --rpc-url hashkey_testnet --broadcast
+# 1) contracts
+forge build && forge test
+
+# 2) AI-AML scorer
+cd scorer && pnpm install --ignore-workspace && pnpm test     # train: pnpm train
+
+# 3) operator console (live on testnet)
+cd ../ui && pnpm install --ignore-workspace
+cp .env.local.example .env.local    # fill RPC + addresses + PRIVATE_KEY (agent) + ALICE_KEY
+pnpm dev                            # http://localhost:3010
 ```
 
-## Next (Day 2+)
+In the dashboard: **Run compliance sweep** → watch the metrics + decision log → **Approve** the
+escalated cases. **Reset demo** returns the cohort to a clean first-run for re-recording.
 
-- Pin the canonical HSP stablecoin address; add `CompliantWrapper.sol` (1:1 HSP → cHSP).
-- Wire the off-chain AI-AML scorer to `AmlOracle.attestRisk` (reuse accredit-core).
-- Bridge `accredit-kyc-providers` → `IdentityRegistry.registerIdentity`.
-- Deploy to testnet, then mainnet (hard requirement); connect institutional UI.
+Deploy from scratch: [`docs/runbook-testnet.md`](docs/runbook-testnet.md).
+
+## Honest scope
+A working prototype of the operating-model shift, not a production compliance system. The AML model
+is a hackathon-grade, explainable stand-in (designed to plug in MistTrack/Elliptic-grade intel).
+Identity is per-address (full ONCHAINID / trusted-issuer is roadmap). The wrapper uses a MockHSP
+stand-in until the canonical HSP token address is wired.
+
+## Build process
+Built collaboratively by **Claude Code + Codex** under a cross-review discipline (CC implements or
+frames; the other reviews) — task briefs in `docs/tasks/`, reviews in `reviews/`.
