@@ -9,6 +9,7 @@ import watchlistData from "./watchlist.json" with { type: "json" };
 
 interface CliOptions {
   submit: boolean;
+  json: boolean;
   counterparties: Address[];
   address: Address;
 }
@@ -18,7 +19,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
   const command = args.shift();
 
   if (command !== "score") {
-    throw new Error('Usage: aml-score score <address> [--counterparty <address>] [--submit]');
+    throw new Error('Usage: aml-score score <address> [--counterparty <address>] [--submit] [--json]');
   }
 
   const addressArg = args.shift();
@@ -28,11 +29,17 @@ function parseArgs(argv: readonly string[]): CliOptions {
 
   const counterparties: Address[] = [];
   let submit = false;
+  let json = false;
 
   while (args.length > 0) {
     const arg = args.shift();
     if (arg === "--submit") {
       submit = true;
+      continue;
+    }
+
+    if (arg === "--json") {
+      json = true;
       continue;
     }
 
@@ -51,6 +58,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
 
   return {
     submit,
+    json,
     counterparties,
     address: normalizeAddress(addressArg),
   };
@@ -110,11 +118,17 @@ async function main(): Promise<void> {
     chain: publicClient ? createChainReader(publicClient) : undefined,
   });
 
-  printResult(result);
+  if (options.json) {
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+  } else {
+    printResult(result);
+  }
 
   if (!options.submit) {
-    console.log("");
-    console.log("Dry run only. Pass --submit to send attestRisk.");
+    if (!options.json) {
+      console.log("");
+      console.log("Dry run only. Pass --submit to send attestRisk.");
+    }
     return;
   }
 
@@ -128,8 +142,10 @@ async function main(): Promise<void> {
     modelRef: result.modelRef,
   });
 
-  console.log("");
-  console.log(`Submitted attestRisk tx: ${txHash}`);
+  if (!options.json) {
+    console.log("");
+    console.log(`Submitted attestRisk tx: ${txHash}`);
+  }
 }
 
 main().catch((error: unknown) => {
