@@ -13,6 +13,7 @@ import {
 import { publicClient } from "@/lib/chain";
 import { addresses, demo, explorerAddress, hashkeyTestnet } from "@/lib/config";
 import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel } from "@/components/Panels";
+import { StorySteps } from "@/components/StorySteps";
 
 export const dynamic = "force-dynamic";
 
@@ -233,9 +234,9 @@ function HeaderCard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.32em] text-sky-300/70">Institutional Console</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">accredit Compliance Dashboard</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">accredit — Compliance, enforced.</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-300">
-            Live read surface for KYC state, anchored AML risk, and wrapped cHSP holdings on HashKey Chain.
+            A regulated stablecoin (cHSP) on HashKey Chain. KYC + AI-AML compliance, enforced on-chain — live.
           </p>
         </div>
         <div className="rounded-2xl border border-sky-400/15 bg-sky-400/10 px-4 py-3 text-sm text-sky-50">
@@ -300,6 +301,7 @@ function IdentityTable({ rows }: { rows: IdentityRow[] }) {
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Identity & Risk</p>
           <h2 className="mt-2 text-xl font-semibold text-white">Live KYC and AML status</h2>
+          <p className="mt-1 text-sm text-slate-400">Who may hold cHSP — and their live AML risk.</p>
         </div>
         <div className="text-sm text-slate-400">Alice, Bob, and the demo watchlist address</div>
       </div>
@@ -398,11 +400,18 @@ export default async function Home() {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
         <HeaderCard />
+        <StorySteps />
         <HoldingsCard data={data} />
-        <IdentityTable rows={data.rows} />
-        <AmlScreening dead={demo.dead} />
-        <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div id="sec-identity" className="scroll-mt-6 rounded-[28px] transition-shadow">
+          <IdentityTable rows={data.rows} />
+        </div>
+        <div id="sec-payment" className="scroll-mt-6 rounded-[28px] transition-shadow">
+          <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
+        </div>
+        <div id="sec-aml" className="scroll-mt-6 rounded-[28px] transition-shadow">
+          <AmlScreening dead={demo.dead} />
+        </div>
+        <div id="sec-agent" className="grid gap-6 scroll-mt-6 rounded-[28px] transition-shadow lg:grid-cols-2">
           <AgentConsole alice={demo.alice} dead={demo.dead} />
           <WrapPanel />
         </div>
