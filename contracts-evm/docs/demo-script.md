@@ -1,76 +1,85 @@
-# accredit on HashKey Chain — demo script (台本)
+# accredit — demo script (台本): Manual vs AI
 
-Target length **~3 min**. Narration in English (deliverable bilingually if asked).
-Everything runs **live on HashKey Chain testnet (chainId 133)**. The companion executable
-`demo/run-demo.sh` performs each beat and prints recordable output; this file is the
-narration + what the audience should see.
+Target **~3 min**. English narration (judges are international). Everything runs **live on
+HashKey Chain testnet (chainId 133)** in the dashboard (`ui/`, http://localhost:3010). The
+punchline is the **Manual vs AI** contrast and the **metrics + audit log**.
 
-**One-line pitch:** *accredit turns any stablecoin payment on HashKey into a
-compliance-enforced one — KYC/allowlist transfer rules plus AI-driven AML screening,
-enforced on-chain.*
+**One-line pitch:** *accredit is the AI that runs your compliance operations on HashKey —
+screening, onboarding, and sanctions containment automatically, escalating only the calls a
+human must make. Not another compliance primitive; the operator on top of them.*
 
 ---
 
-## Beat 0 — The stack is live (0:00–0:25)
+## Beat 0 — The real bottleneck (0:00–0:30)
 
-> "This is accredit, running live on HashKey Chain testnet. Four contracts: an identity
-> registry for KYC, an AML oracle, a modular compliance engine, and cHSP — a
-> compliance-gated stablecoin. All verifiable on the HashKey explorer."
+> "On a regulated chain like HashKey, the compliance *primitives* already exist — KYC, AML
+> screening, transfer enforcement. What doesn't scale is the **operations**: a human officer
+> monitoring every wallet, screening, deciding, acting — slow, costly, and never full coverage.
+> accredit automates that operating layer, and keeps a human in the loop for the calls that matter."
 
-Show: the 6 deployed addresses + explorer links (`docs/deployment-testnet.md`).
+Show: the dashboard header + the operator console (live on HashKey testnet).
 
-## Beat 1 — Onboard real users (0:25–0:50)
+## Beat 1 — The manual reality (0:30–1:05)
 
-> "Alice and Bob are onboarded: KYC level 2, Japan jurisdiction, and screened
-> AML-clean. The registry and oracle confirm this on-chain."
+> "This is the compliance operator's console. Done by hand, the officer works one wallet at a
+> time — open it, screen it, decide, act, log it. For a handful that's minutes; at scale it's a
+> backlog, so teams spot-check instead of covering everyone."
 
-Show: `isVerified(alice,1)=true`, `isClean(alice,50,30d)=true`, Alice holds 1000 cHSP.
+Show: scroll to **Screen & decide**, screen one address manually (Run scorer → breakdown). Then
+**Transfer Policy**: click "Alice → flagged" → BLOCKED. "Enforcement works — but a human still has
+to drive every step."
 
-## Beat 2 — A compliant payment goes through (0:50–1:15)
+## Beat 2 — One AI sweep (1:05–1:55)
 
-> "Alice pays Bob in cHSP. Both are compliant, so the transfer settles — a normal
-> stablecoin payment, but every transfer is checked at the contract level."
+> "Now the AI operator. One sweep."
 
-Show: live tx `alice → bob` (50 cHSP) succeeds; Bob's balance increases. Tx hash on explorer.
+Show: top **AI Compliance Operator** → **Run compliance sweep**. While it runs (~1 min):
 
-## Beat 3 — The AI-AML scorer flags a bad actor (1:15–1:50)
+> "It screens the entire cohort — 100% coverage — re-scores everyone, and acts: clean applicants
+> auto-onboarded, every verdict anchored on-chain."
 
-> "Now the AI side. Our off-chain AML scorer evaluates an address against sanctions
-> exposure, velocity, and account signals — producing an explainable 0–100 score, with
-> the model version hashed on-chain for audit. This address scores 65 — high risk. The
-> verdict is written to the AML oracle."
+Show the metrics fill in:
 
-Show: `demo` runs the scorer on `0x…dead` → score 65 / band high / per-feature breakdown
-→ `attestRisk` tx. Then `riskOf(dead)` read back from chain.
+> "Five screened, full coverage, three auto-resolved, in under a minute — versus roughly fifteen
+> minutes by hand, and only if you check everyone, which teams don't."
 
-## Beat 4 — Compliance blocks the flagged transfer (1:50–2:25)
+## Beat 3 — Human-in-the-loop (1:55–2:35)
 
-> "Alice now tries to pay that same flagged address. Even though it's KYC'd, the
-> compliance engine reads the AI verdict and blocks the transfer on-chain — reason:
-> recipient failed AML screen. This is the whole pitch in one transaction: AI screening,
-> enforced by the contract."
+> "Crucially, it doesn't pretend to replace judgment. It escalated two cases. A model-flagged
+> high-risk desk — the AI anchored the verdict, so transfers to it already block, but the *freeze*
+> decision comes to me. And a confirmed sanctions hit — auto-contained, frozen immediately, with
+> fund recovery escalated for my approval."
 
-Show: live tx `alice → dead` **reverts** with `recipient failed AML screen`. Contrast with
-Beat 2's success.
+Show: the **Human review queue**; click **Approve** on the high-risk freeze.
 
-## Beat 5 — Pull existing liquidity into compliance (2:25–2:55)
+> "The AI proposes; the human disposes. It never moves funds on its own."
 
-> "Finally — adoption. Existing HSP holders wrap 1:1 into cHSP. The wrap only succeeds for
-> compliant holders, so liquidity flows into the compliance layer; unwrapping returns the
-> underlying. A frozen or sanctioned holder can't wrap in or unwrap out."
+## Beat 4 — Proof + close (2:35–3:05)
 
-Show: `wrap(300)` → 300 cHSP minted, 300 HSP locked 1:1; `unwrap(100)` → returns underlying.
-(Optional) freeze → wrap/unwrap blocked.
+> "Every action is a real on-chain transaction with a full decision log — verifiable on the
+> HashKey explorer."
 
-## Close (2:55–3:00)
+Show: click a tx hash in the decision log → explorer.
 
-> "accredit: compliance-enforced payments and AI-AML screening, live on HashKey Chain.
-> Built for a regulated chain's regulated future."
+> "accredit doesn't reinvent compliance primitives — HashKey already has them. It automates the
+> human operations on top, with a regulator-grade human-in-the-loop. Compliance operations, an
+> order of magnitude faster — live on HashKey."
 
 ---
 
 ## Recording notes
-- Run `demo/run-demo.sh` once end-to-end first to seed/confirm state, then record a clean run.
-- The script pauses between beats (resume on keypress) so narration can land.
-- Keep the explorer open in a second window to click through tx hashes live.
-- Beats 2 and 4 are the money shots — a real successful tx vs a real reverted tx, same sender.
+- The **first** sweep is the best take: it shows onboarding + auto-freeze. To re-record a clean
+  first-run, reset the cohort state first (revoke + unfreeze), e.g. from `contracts-evm/`:
+  ```bash
+  set -a && . ./.env && set +a; RPC=https://testnet.hsk.xyz
+  for a in 0x00000000000000000000000000000000c0ffee10 0x00000000000000000000000000000000c0ffee11 \
+           0x00000000000000000000000000000000c0ffee12 0x00000000000000000000000000000000c0ffee14 \
+           0x000000000000000000000000000000000000dead; do
+    cast send $REGISTRY "revokeIdentity(address)" $a --rpc-url $RPC --private-key $PRIVATE_KEY >/dev/null
+    cast send $REGISTRY "setAddressFrozen(address,bool)" $a false --rpc-url $RPC --private-key $PRIVATE_KEY >/dev/null
+  done
+  ```
+  (CC can add a one-click "Reset demo" button if preferred.)
+- Keep the HashKey testnet explorer open in a second window to click tx hashes live.
+- Beats 2–3 are the money shots: the metrics delta + the HITL approve.
+- Run `ui/` with `pnpm dev` (port 3010); ensure `.env.local` has the keys (gitignored).
