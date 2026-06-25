@@ -12,8 +12,8 @@ import {
 } from "@/lib/abis";
 import { publicClient } from "@/lib/chain";
 import { addresses, demo, explorerAddress, hashkeyTestnet } from "@/lib/config";
-import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel } from "@/components/Panels";
-import { StorySteps } from "@/components/StorySteps";
+import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel, Onboard } from "@/components/Panels";
+import { OperatorNav } from "@/components/OperatorNav";
 
 export const dynamic = "force-dynamic";
 
@@ -264,36 +264,6 @@ function HeaderCard() {
   );
 }
 
-function HoldingsCard({ data }: { data: DashboardData }) {
-  return (
-    <section className="rounded-[28px] border border-white/10 bg-slate-900/75 p-6 backdrop-blur">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Holdings</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">
-            {data.tokenName} ({data.tokenSymbol}) supply {formatToken(data.totalSupply)}
-          </h2>
-        </div>
-        <div className="text-sm text-slate-400">Minimum KYC threshold: level {data.minKycLevel}</div>
-      </div>
-      <div className="mt-5 flex flex-wrap gap-3 text-sm">
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-200">
-          Alice cHSP {formatToken(data.holdings.alice)}
-        </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-200">
-          Bob cHSP {formatToken(data.holdings.bob)}
-        </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-slate-200">
-          Deployer cHSP {formatToken(data.holdings.deployer)}
-        </div>
-        <div className="rounded-full border border-sky-300/20 bg-sky-400/10 px-4 py-2 text-sky-100">
-          Wrapper MockHSP backing {formatToken(data.holdings.wrapperBacking)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function IdentityTable({ rows }: { rows: IdentityRow[] }) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-slate-900/75 p-6 backdrop-blur">
@@ -393,6 +363,44 @@ function ErrorCard({ message }: { message: string }) {
   );
 }
 
+function GroupHeader({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-400/15 text-sm font-semibold text-sky-100 ring-1 ring-sky-300/30">
+        {n}
+      </span>
+      <div>
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <p className="text-sm text-slate-400">{desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function MonitorSummary({ data }: { data: DashboardData }) {
+  const verified = data.rows.filter((r) => r.verified).length;
+  const highRisk = data.rows.filter((r) => r.risk.score >= 50).length;
+  const frozen = data.rows.filter((r) => r.frozen).length;
+  const cards = [
+    { label: "Participants", value: String(data.rows.length) },
+    { label: "KYC verified", value: String(verified) },
+    { label: "High risk (≥50)", value: String(highRisk) },
+    { label: "Frozen", value: String(frozen) },
+    { label: `${data.tokenSymbol} supply`, value: formatToken(data.totalSupply) },
+    { label: "Wrapper backing", value: formatToken(data.holdings.wrapperBacking) },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      {cards.map((c) => (
+        <div key={c.label} className="rounded-2xl border border-white/10 bg-slate-900/75 px-4 py-3 backdrop-blur">
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{c.label}</div>
+          <div className="mt-1 text-lg font-semibold text-white">{c.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default async function Home() {
   try {
     const data = await loadDashboardData();
@@ -400,19 +408,28 @@ export default async function Home() {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
         <HeaderCard />
-        <StorySteps />
-        <HoldingsCard data={data} />
-        <div id="sec-identity" className="scroll-mt-6 rounded-[28px] transition-shadow">
+        <OperatorNav />
+
+        <div id="grp-monitor" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={1} title="Monitor" desc="Standing view of every participant and their live KYC + AML risk." />
+          <MonitorSummary data={data} />
           <IdentityTable rows={data.rows} />
         </div>
-        <div id="sec-payment" className="scroll-mt-6 rounded-[28px] transition-shadow">
-          <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
-        </div>
-        <div id="sec-aml" className="scroll-mt-6 rounded-[28px] transition-shadow">
+
+        <div id="grp-screen" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={2} title="Screen & decide" desc="Investigate an address with AI-AML and anchor the verdict on-chain." />
           <AmlScreening dead={demo.dead} />
         </div>
-        <div id="sec-agent" className="grid gap-6 scroll-mt-6 rounded-[28px] transition-shadow lg:grid-cols-2">
+
+        <div id="grp-enforce" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={3} title="Enforce & respond" desc="Check transfer policy, and act on exceptions: freeze and recover." />
+          <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
           <AgentConsole alice={demo.alice} dead={demo.dead} />
+        </div>
+
+        <div id="grp-ops" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={4} title="Issuance ops" desc="Onboard participants, then issue and redeem cHSP." />
+          <Onboard />
           <WrapPanel />
         </div>
       </main>
