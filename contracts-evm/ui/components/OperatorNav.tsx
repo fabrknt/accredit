@@ -1,11 +1,9 @@
 "use client";
 
 const GROUPS = [
-  { n: "★", title: "AI sweep", target: "grp-ai" },
-  { n: "1", title: "Monitor", target: "grp-monitor" },
-  { n: "2", title: "Screen & decide", target: "grp-screen" },
-  { n: "3", title: "Enforce & respond", target: "grp-enforce" },
-  { n: "4", title: "Issuance ops", target: "grp-ops" },
+  { n: "1", title: "Automated screening", target: "grp-ai" },
+  { n: "2", title: "Monitored accounts", target: "grp-monitor" },
+  { n: "3", title: "Operator actions", target: "grp-tools" },
 ] as const;
 
 export function OperatorNav() {

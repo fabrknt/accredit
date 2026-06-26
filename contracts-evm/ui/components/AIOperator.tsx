@@ -27,22 +27,6 @@ export function AIOperator() {
   const [escalations, setEscalations] = useState<Esc[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [resolved, setResolved] = useState<Record<string, string>>({});
-  const [resetting, setResetting] = useState(false);
-
-  async function resetDemo() {
-    setResetting(true); setError(null);
-    try {
-      const res = await fetch("/api/reset", { method: "POST" });
-      const j = await res.json();
-      if (j.error) { setError(j.error); return; }
-      setLog(null); setMetrics(null); setEscalations([]); setResolved({});
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "reset failed");
-    } finally {
-      setResetting(false);
-    }
-  }
 
   async function runSweep() {
     setBusy(true); setError(null);
@@ -77,26 +61,20 @@ export function AIOperator() {
   return (
     <section className={`${card} border-sky-400/20`}>
       <p className="text-xs uppercase tracking-[0.28em] text-sky-300/70">AI Compliance Operator</p>
-      <h2 className="mt-2 text-2xl font-semibold text-white">Run the compliance work — automatically</h2>
+      <h2 className="mt-2 text-2xl font-semibold text-white">Continuous compliance screening</h2>
       <p className="mt-1 max-w-3xl text-sm text-slate-300">
-        One sweep screens the whole cohort, auto-resolves the routine (onboarding, anchoring, sanctions
-        containment), and escalates only the ambiguous or irreversible calls to a human. The console
-        below is the same work done by hand.
+        Each run screens every monitored account, auto-resolves the routine (onboarding, verdict
+        anchoring, sanctions containment), and routes only the judgment calls and irreversible actions
+        to the review queue below.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button className={btn} onClick={runSweep} disabled={busy || resetting}>Run compliance sweep</button>
-        <button className={btnGhost} onClick={resetDemo} disabled={busy || resetting} title="Revoke + unfreeze the demo cohort for a clean first-run">Reset demo</button>
+        <button className={btn} onClick={runSweep} disabled={busy}>Run sweep now</button>
+        <span className="text-xs text-slate-400">Automated screening · runs across all monitored accounts</span>
         {busy && (
           <span className="inline-flex items-center gap-2 text-sm text-sky-200">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-200" aria-hidden />
-            Screening cohort &amp; executing on-chain… (~1 min)
-          </span>
-        )}
-        {resetting && (
-          <span className="inline-flex items-center gap-2 text-sm text-slate-300">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-slate-200" aria-hidden />
-            Resetting demo cohort…
+            Screening accounts &amp; executing on-chain… (~1 min)
           </span>
         )}
       </div>

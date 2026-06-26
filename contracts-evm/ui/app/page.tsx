@@ -15,6 +15,8 @@ import { addresses, demo, explorerAddress, hashkeyTestnet } from "@/lib/config";
 import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel, Onboard } from "@/components/Panels";
 import { OperatorNav } from "@/components/OperatorNav";
 import { AIOperator } from "@/components/AIOperator";
+import { DemoControls } from "@/components/DemoControls";
+import { cohort } from "@/lib/cohort";
 
 export const dynamic = "force-dynamic";
 
@@ -60,11 +62,8 @@ const HEADER_LINKS = [
   { label: "Wrapper", address: addresses.wrapper },
 ] as const;
 
-const PARTY_LABELS = [
-  { label: "Alice", address: demo.alice },
-  { label: "Bob", address: demo.bob },
-  { label: "dead", address: demo.dead },
-] as const;
+// Monitored accounts = the AI operator's watched cohort.
+const PARTY_LABELS = cohort.map((m) => ({ label: m.label, address: m.address }));
 
 function formatToken(value: bigint): string {
   const numeric = Number(formatUnits(value, 18));
@@ -234,10 +233,11 @@ function HeaderCard() {
     <section className="rounded-[28px] border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-sky-950/20 backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-sky-300/70">Institutional Console</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">accredit — Compliance, enforced.</h1>
+          <p className="text-xs uppercase tracking-[0.32em] text-sky-300/70">Compliance Operations Console</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">accredit</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-300">
-            A regulated stablecoin (cHSP) on HashKey Chain. KYC + AI-AML compliance, enforced on-chain — live.
+            AI-run compliance operations for regulated tokens on HashKey Chain — automated screening
+            and enforcement, with a human in the loop. Live on testnet.
           </p>
         </div>
         <div className="rounded-2xl border border-sky-400/15 bg-sky-400/10 px-4 py-3 text-sm text-sky-50">
@@ -382,13 +382,14 @@ function MonitorSummary({ data }: { data: DashboardData }) {
   const verified = data.rows.filter((r) => r.verified).length;
   const highRisk = data.rows.filter((r) => r.risk.score >= 50).length;
   const frozen = data.rows.filter((r) => r.frozen).length;
+  const pending = data.rows.filter((r) => !r.verified).length;
   const cards = [
-    { label: "Participants", value: String(data.rows.length) },
+    { label: "Monitored accounts", value: String(data.rows.length) },
+    { label: "Open alerts (high risk)", value: String(highRisk) },
+    { label: "Contained (frozen)", value: String(frozen) },
+    { label: "Pending onboarding", value: String(pending) },
     { label: "KYC verified", value: String(verified) },
-    { label: "High risk (≥50)", value: String(highRisk) },
-    { label: "Frozen", value: String(frozen) },
     { label: `${data.tokenSymbol} supply`, value: formatToken(data.totalSupply) },
-    { label: "Wrapper backing", value: formatToken(data.holdings.wrapperBacking) },
   ];
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -409,33 +410,29 @@ export default async function Home() {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
         <HeaderCard />
-        <div id="grp-ai" className="scroll-mt-6 rounded-[28px] transition-shadow">
-          <AIOperator />
-        </div>
+        <MonitorSummary data={data} />
         <OperatorNav />
 
+        <div id="grp-ai" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={1} title="Automated screening" desc="The AI operator screens every account, auto-resolves the routine, and queues the rest for human review." />
+          <AIOperator />
+        </div>
+
         <div id="grp-monitor" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={1} title="Monitor" desc="Standing view of every participant and their live KYC + AML risk." />
-          <MonitorSummary data={data} />
+          <GroupHeader n={2} title="Monitored accounts" desc="Live KYC and AML status of every account under monitoring." />
           <IdentityTable rows={data.rows} />
         </div>
 
-        <div id="grp-screen" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={2} title="Screen & decide" desc="Investigate an address with AI-AML and anchor the verdict on-chain." />
+        <div id="grp-tools" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={3} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
           <AmlScreening dead={demo.dead} />
-        </div>
-
-        <div id="grp-enforce" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={3} title="Enforce & respond" desc="Check transfer policy, and act on exceptions: freeze and recover." />
           <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
           <AgentConsole alice={demo.alice} dead={demo.dead} />
-        </div>
-
-        <div id="grp-ops" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={4} title="Issuance ops" desc="Onboard participants, then issue and redeem cHSP." />
           <Onboard />
           <WrapPanel />
         </div>
+
+        <DemoControls />
       </main>
     );
   } catch (error) {
