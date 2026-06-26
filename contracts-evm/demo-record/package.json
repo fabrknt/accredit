@@ -1,0 +1,11 @@
+{
+  "name": "accredit-demo-record",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "record": "node record.mjs" },
+  "dependencies": {
+    "puppeteer": "^23.0.0",
+    "puppeteer-screen-recorder": "^3.0.6"
+  }
+}
