@@ -7,6 +7,7 @@ import { GrowthInbox, type Prospect } from "@/components/GrowthInbox";
 const card = "rounded-[28px] border border-white/10 bg-slate-900/75 p-6 backdrop-blur";
 const btn = "rounded-xl border border-sky-300/30 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-50 hover:bg-sky-400/20 disabled:opacity-40";
 const btnGhost = "rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 hover:bg-white/10 disabled:opacity-40";
+const cta = "inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-400 to-emerald-400 px-6 py-3 text-base font-semibold text-slate-900 shadow-lg shadow-sky-500/30 transition hover:from-sky-300 hover:to-emerald-300 hover:shadow-sky-400/50 hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100";
 const explorerTx = (h: string) => `https://testnet-explorer.hsk.xyz/tx/${h}`;
 
 function riskClass(b: string) {
@@ -71,23 +72,34 @@ export function AIOperator() {
         contains sanctions, queues judgment calls for review (protect), and surfaces high-value prospects (grow).
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button className={btn} onClick={runSweep} disabled={busy}>{state ? "Re-run sweep" : "Run sweep now"}</button>
-        <span className="text-xs text-slate-400">Automated screening across all monitored accounts</span>
-        {busy && (
-          <span className="inline-flex items-center gap-2 text-sm text-sky-200">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-200" aria-hidden />
-            Screening accounts &amp; executing on-chain… (~1 min)
-          </span>
+      <div className="mt-5">
+        {!state && !busy ? (
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-sky-400/25 bg-sky-400/5 px-4 py-10 text-center">
+            <button className={`${cta} ring-2 ring-sky-300/40`} onClick={runSweep}>
+              <span aria-hidden>▶</span> Run sweep now
+            </button>
+            <p className="max-w-md text-sm text-slate-400">
+              The console is on standby. One sweep screens every account and fills the KPIs, the protect
+              queue, growth prospects, and the audit log — about a minute.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <button className={cta} onClick={runSweep} disabled={busy}>
+              <span aria-hidden>▶</span> {busy ? "Sweeping…" : "Re-run sweep"}
+            </button>
+            {busy ? (
+              <span className="inline-flex items-center gap-2 text-sm text-sky-200">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-200" aria-hidden />
+                Screening accounts &amp; executing on-chain… (~1 min)
+              </span>
+            ) : (
+              <span className="text-xs text-slate-400">Automated screening across all monitored accounts</span>
+            )}
+          </div>
         )}
       </div>
       {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
-
-      {!state && !busy && (
-        <p className="mt-6 rounded-2xl border border-dashed border-white/10 bg-slate-950/40 px-4 py-6 text-center text-sm text-slate-400">
-          Console is on standby. Run a sweep to screen all accounts and populate KPIs, alerts, prospects, and the audit log.
-        </p>
-      )}
 
       {state && (
         <div className="mt-6 flex flex-col gap-6">
