@@ -17,7 +17,7 @@ function bandClass(b: string) {
 
 type LogRow = { label: string; address: string; score: number; band: string; mode: string; headline: string; tx?: string };
 type Esc = { label: string; address: string; score: number; band: string; kind: string; recommendation: string };
-type Metrics = { screened: number; coveragePct: number; autoResolved: number; escalated: number; onchainActions: number; elapsedSec: number; manualEstimateMin: number };
+type Metrics = { screened: number; coveragePct: number; autoResolved: number; escalated: number; prospects: number; onchainActions: number; elapsedSec: number; manualEstimateMin: number };
 
 export function AIOperator() {
   const router = useRouter();
@@ -88,6 +88,7 @@ export function AIOperator() {
               { l: "Coverage", v: `${metrics.coveragePct}%` },
               { l: "Auto-resolved", v: `${metrics.autoResolved}` },
               { l: "Escalated", v: `${metrics.escalated}` },
+              { l: "Prospects surfaced", v: `${metrics.prospects}` },
               { l: "On-chain actions", v: `${metrics.onchainActions}` },
               { l: "Time", v: `${metrics.elapsedSec}s` },
             ].map((c) => (

@@ -16,7 +16,9 @@ import { AmlScreening, PaymentSimulator, AgentConsole, WrapPanel, Onboard } from
 import { OperatorNav } from "@/components/OperatorNav";
 import { AIOperator } from "@/components/AIOperator";
 import { DemoControls } from "@/components/DemoControls";
+import { GrowthInbox } from "@/components/GrowthInbox";
 import { cohort } from "@/lib/cohort";
+import { scoreOpportunity, recommendedAction, type OppResult } from "@/lib/opportunity";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,7 @@ type IdentityRow = {
     modelRef: string;
   };
   balance: bigint;
+  opp: OppResult;
 };
 
 type DashboardData = {
@@ -63,7 +66,7 @@ const HEADER_LINKS = [
 ] as const;
 
 // Monitored accounts = the AI operator's watched cohort.
-const PARTY_LABELS = cohort.map((m) => ({ label: m.label, address: m.address }));
+const PARTY_LABELS = cohort.map((m) => ({ label: m.label, address: m.address, growth: m.growth }));
 
 function formatToken(value: bigint): string {
   const numeric = Number(formatUnits(value, 18));
@@ -87,6 +90,12 @@ function bandClasses(band: "low" | "medium" | "high"): string {
   if (band === "high") return "bg-rose-500/15 text-rose-200 ring-1 ring-rose-400/30";
   if (band === "medium") return "bg-amber-500/15 text-amber-100 ring-1 ring-amber-300/30";
   return "bg-emerald-500/15 text-emerald-100 ring-1 ring-emerald-300/30";
+}
+
+function oppBandClasses(tier: string): string {
+  if (tier === "strategic") return "bg-emerald-500/15 text-emerald-100 ring-1 ring-emerald-300/30";
+  if (tier === "priority") return "bg-sky-500/15 text-sky-100 ring-1 ring-sky-300/30";
+  return "bg-white/6 text-slate-300 ring-1 ring-white/10";
 }
 
 function jurisdictionLabel(code: number): string {
@@ -131,7 +140,7 @@ async function loadDashboardData(): Promise<DashboardData> {
 
   const deployer = deployerAddress();
   const rows = await Promise.all(
-    PARTY_LABELS.map(async ({ label, address }) => {
+    PARTY_LABELS.map(async ({ label, address, growth }) => {
       const [verified, frozen, identity, risk, balance] = await Promise.all([
         publicClient.readContract({
           address: addresses.registry,
@@ -182,6 +191,7 @@ async function loadDashboardData(): Promise<DashboardData> {
           modelRef: risk.modelRef,
         },
         balance,
+        opp: scoreOpportunity(growth ?? {}),
       } satisfies IdentityRow;
     }),
   );
@@ -233,11 +243,13 @@ function HeaderCard() {
     <section className="rounded-[28px] border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-sky-950/20 backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-sky-300/70">Compliance Operations Console</p>
+          <p className="text-xs uppercase tracking-[0.32em] text-sky-300/70">AI Operations Console · Protect + Grow</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white">accredit</h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-300">
-            AI-run compliance operations for regulated tokens on HashKey Chain — automated screening
-            and enforcement, with a human in the loop. Live on testnet.
+            The AI operations layer for regulated on-chain finance on HashKey Chain. One pass:
+            <span className="text-sky-200"> protect</span> (screen, contain, enforce) and
+            <span className="text-emerald-200"> grow</span> (surface high-value prospects for the BD team) —
+            human in the loop. Live on testnet.
           </p>
         </div>
         <div className="rounded-2xl border border-sky-400/15 bg-sky-400/10 px-4 py-3 text-sm text-sky-50">
@@ -285,7 +297,8 @@ function IdentityTable({ rows }: { rows: IdentityRow[] }) {
               <th className="pb-3 pr-6 font-medium">Frozen</th>
               <th className="pb-3 pr-6 font-medium">Identity</th>
               <th className="pb-3 pr-6 font-medium">AML</th>
-              <th className="pb-3 font-medium">cHSP</th>
+              <th className="pb-3 pr-6 font-medium">cHSP</th>
+              <th className="pb-3 font-medium">Opportunity</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/6">
@@ -343,7 +356,19 @@ function IdentityTable({ rows }: { rows: IdentityRow[] }) {
                       {row.risk.updatedAt === 0n ? "Not attested" : `Model ${row.risk.modelRef.slice(0, 10)}…`}
                     </div>
                   </td>
-                  <td className="py-4 font-medium text-slate-100">{formatToken(row.balance)}</td>
+                  <td className="py-4 pr-6 font-medium text-slate-100">{formatToken(row.balance)}</td>
+                  <td className="py-4">
+                    {row.frozen ? (
+                      <span className="text-xs text-slate-500">—</span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white">{row.opp.score}</span>
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium uppercase ${oppBandClasses(row.opp.tier)}`}>
+                          {row.opp.tier}
+                        </span>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -383,19 +408,29 @@ function MonitorSummary({ data }: { data: DashboardData }) {
   const highRisk = data.rows.filter((r) => r.risk.score >= 50).length;
   const frozen = data.rows.filter((r) => r.frozen).length;
   const pending = data.rows.filter((r) => !r.verified).length;
+  const prospects = data.rows.filter((r) => !r.frozen && r.opp.tier !== "lead").length;
+  const strategic = data.rows.filter((r) => !r.frozen && r.opp.tier === "strategic").length;
+  const flows = data.rows.filter((r) => !r.frozen && r.opp.intent).length;
   const cards = [
-    { label: "Monitored accounts", value: String(data.rows.length) },
-    { label: "Open alerts (high risk)", value: String(highRisk) },
-    { label: "Contained (frozen)", value: String(frozen) },
-    { label: "Pending onboarding", value: String(pending) },
-    { label: "KYC verified", value: String(verified) },
-    { label: `${data.tokenSymbol} supply`, value: formatToken(data.totalSupply) },
+    { label: "Monitored accounts", value: String(data.rows.length), kind: "risk" as const },
+    { label: "Open alerts (high risk)", value: String(highRisk), kind: "risk" as const },
+    { label: "Contained (frozen)", value: String(frozen), kind: "risk" as const },
+    { label: "Prospects identified", value: String(prospects), kind: "growth" as const },
+    { label: "Strategic leads", value: String(strategic), kind: "growth" as const },
+    { label: "Notable inbound flows", value: String(flows), kind: "growth" as const },
   ];
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {cards.map((c) => (
-        <div key={c.label} className="rounded-2xl border border-white/10 bg-slate-900/75 px-4 py-3 backdrop-blur">
-          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{c.label}</div>
+        <div
+          key={c.label}
+          className={`rounded-2xl border px-4 py-3 backdrop-blur ${
+            c.kind === "growth" ? "border-emerald-300/20 bg-emerald-500/5" : "border-white/10 bg-slate-900/75"
+          }`}
+        >
+          <div className={`text-xs uppercase tracking-[0.18em] ${c.kind === "growth" ? "text-emerald-200/80" : "text-slate-400"}`}>
+            {c.kind === "growth" ? "↗ " : ""}{c.label}
+          </div>
           <div className="mt-1 text-lg font-semibold text-white">{c.value}</div>
         </div>
       ))}
@@ -406,6 +441,20 @@ function MonitorSummary({ data }: { data: DashboardData }) {
 export default async function Home() {
   try {
     const data = await loadDashboardData();
+
+    const prospects = data.rows
+      .filter((r) => !r.frozen && r.opp.tier !== "lead")
+      .sort((a, b) => b.opp.score - a.opp.score)
+      .map((r) => ({
+        label: r.label,
+        address: r.address,
+        score: r.opp.score,
+        tier: r.opp.tier,
+        intent: r.opp.intent,
+        recommendation: recommendedAction(r.opp.tier, r.opp.intent),
+        reasons: r.opp.reasons,
+        riskFlag: r.risk.score >= 50,
+      }));
 
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
@@ -419,12 +468,17 @@ export default async function Home() {
         </div>
 
         <div id="grp-monitor" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={2} title="Monitored accounts" desc="Live KYC and AML status of every account under monitoring." />
+          <GroupHeader n={2} title="Monitored accounts" desc="Live KYC + AML (protect) and opportunity (grow) on every account." />
           <IdentityTable rows={data.rows} />
         </div>
 
+        <div id="grp-growth" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
+          <GroupHeader n={3} title="Growth — opportunity inbox" desc="High-value prospects surfaced for BD / onboarding. Advisory; the human decides." />
+          <GrowthInbox prospects={prospects} />
+        </div>
+
         <div id="grp-tools" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={3} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
+          <GroupHeader n={4} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
           <AmlScreening dead={demo.dead} />
           <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
           <AgentConsole alice={demo.alice} dead={demo.dead} />
