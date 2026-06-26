@@ -19,6 +19,19 @@ full on-chain audit log.
 → Pitch: [`docs/pitch.md`](docs/pitch.md) · Demo script: [`docs/demo-script.md`](docs/demo-script.md)
 · Specs: [`docs/ai-operator-spec.md`](docs/ai-operator-spec.md), [`docs/growth-engine-spec.md`](docs/growth-engine-spec.md)
 
+## For judges (3-minute path)
+1. **What's novel:** every other tool automates *defense* only. accredit makes one AI pass **protect AND
+   grow** — a cost-center becomes a profit-center — with a human in the loop. (Why this matters, given
+   HashKey already has the primitives: [`docs/pitch.md`](docs/pitch.md).)
+2. **See it live:** run the UI (below) → **Run sweep now** → the console fills: KPIs, the protect review
+   queue (Approve an escalated freeze), the growth opportunity inbox (Flag a prospect), the accounts
+   table (risk + opportunity), and the audit log.
+3. **It's real on-chain:** every protect action is a transaction on HashKey testnet — open any tx hash in
+   the audit log, or the [contracts on the explorer](#live-on-hashkey-chain-testnet-chainid-133).
+4. **The AI:** policy + a trained, explainable AML model ([`docs/ai-operator-spec.md`](docs/ai-operator-spec.md))
+   and a transparent opportunity model ([`docs/growth-engine-spec.md`](docs/growth-engine-spec.md)); the
+   ethics line — growth is advisory, routes leads to a human, never trades or front-runs.
+
 ## Live on HashKey Chain testnet (chainId 133)
 
 Explorer: https://testnet-explorer.hsk.xyz

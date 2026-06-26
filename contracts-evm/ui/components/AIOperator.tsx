@@ -106,18 +106,22 @@ export function AIOperator() {
           {/* KPI bar */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
             {[
-              { l: "Monitored", v: state.kpis.monitored, g: false },
-              { l: "Open alerts", v: state.kpis.openAlerts, g: false },
-              { l: "Contained", v: state.kpis.contained, g: false },
-              { l: "Prospects", v: state.kpis.prospects, g: true },
-              { l: "Strategic", v: state.kpis.strategic, g: true },
-              { l: "Notable flows", v: state.kpis.flows, g: true },
-            ].map((c) => (
-              <div key={c.l} className={`rounded-2xl border px-4 py-3 ${c.g ? "border-emerald-300/20 bg-emerald-500/5" : "border-white/10 bg-slate-950/50"}`}>
-                <div className={`text-xs uppercase tracking-[0.16em] ${c.g ? "text-emerald-200/80" : "text-slate-400"}`}>{c.g ? "↗ " : ""}{c.l}</div>
-                <div className="mt-1 text-lg font-semibold text-white">{c.v}</div>
-              </div>
-            ))}
+              { l: "Monitored", v: state.kpis.monitored, tone: "neutral" as const },
+              { l: "Open alerts", v: state.kpis.openAlerts, tone: state.kpis.openAlerts > 0 ? ("alert" as const) : ("neutral" as const) },
+              { l: "Contained", v: state.kpis.contained, tone: "neutral" as const },
+              { l: "Prospects", v: state.kpis.prospects, tone: "growth" as const },
+              { l: "Strategic", v: state.kpis.strategic, tone: "growth" as const },
+              { l: "Notable flows", v: state.kpis.flows, tone: "growth" as const },
+            ].map((c) => {
+              const tint = c.tone === "alert" ? "border-rose-400/40 bg-rose-500/10" : c.tone === "growth" ? "border-emerald-300/20 bg-emerald-500/5" : "border-white/10 bg-slate-950/50";
+              const lab = c.tone === "alert" ? "text-rose-200" : c.tone === "growth" ? "text-emerald-200/80" : "text-slate-400";
+              return (
+                <div key={c.l} className={`rounded-2xl border px-4 py-3 ${tint}`}>
+                  <div className={`text-xs uppercase tracking-[0.16em] ${lab}`}>{c.tone === "growth" ? "↗ " : ""}{c.tone === "alert" ? "⚠ " : ""}{c.l}</div>
+                  <div className="mt-1 text-2xl font-semibold text-white">{c.v}</div>
+                </div>
+              );
+            })}
           </div>
 
           <p className="text-sm text-sky-100/90">
