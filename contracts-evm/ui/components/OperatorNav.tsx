@@ -2,7 +2,8 @@
 
 const GROUPS = [
   { n: "1", title: "AI operations sweep", target: "grp-ai" },
-  { n: "2", title: "Manual tools", target: "grp-tools" },
+  { n: "2", title: "Manual interventions", target: "grp-intervene" },
+  { n: "3", title: "Issuance operations", target: "grp-issuance" },
 ] as const;
 
 export function OperatorNav() {

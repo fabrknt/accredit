@@ -450,15 +450,24 @@ export default async function Home() {
           <AIOperator />
         </div>
 
-        <details id="grp-tools" className="scroll-mt-6 rounded-[28px] border border-white/10 bg-slate-900/40 p-2 backdrop-blur">
+        <details id="grp-intervene" className="scroll-mt-6 rounded-[28px] border border-white/10 bg-slate-900/40 p-2 backdrop-blur">
           <summary className="cursor-pointer list-none rounded-2xl px-4 py-3 hover:bg-white/5">
-            <span className="text-sm font-semibold text-white">Manual operator tools</span>
-            <span className="ml-2 text-sm text-slate-400">— screen, transfer policy, freeze / recover, onboard, wrap (click to expand)</span>
+            <span className="text-sm font-semibold text-white">Manual interventions</span>
+            <span className="ml-2 text-sm text-slate-400">— act on a case by hand: screen, transfer policy, freeze / recover (click to expand)</span>
           </summary>
           <div className="mt-3 flex flex-col gap-4 px-1">
             <AmlScreening dead={demo.dead} />
             <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
             <AgentConsole alice={demo.alice} dead={demo.dead} />
+          </div>
+        </details>
+
+        <details id="grp-issuance" className="scroll-mt-6 rounded-[28px] border border-white/10 bg-slate-900/40 p-2 backdrop-blur">
+          <summary className="cursor-pointer list-none rounded-2xl px-4 py-3 hover:bg-white/5">
+            <span className="text-sm font-semibold text-white">Issuance operations</span>
+            <span className="ml-2 text-sm text-slate-400">— routine treasury / onboarding: onboard, wrap / unwrap (click to expand)</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-4 px-1">
             <Onboard />
             <WrapPanel />
           </div>
