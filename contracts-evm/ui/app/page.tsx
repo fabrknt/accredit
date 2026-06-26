@@ -440,45 +440,18 @@ function MonitorSummary({ data }: { data: DashboardData }) {
 
 export default async function Home() {
   try {
-    const data = await loadDashboardData();
-
-    const prospects = data.rows
-      .filter((r) => !r.frozen && r.opp.tier !== "lead")
-      .sort((a, b) => b.opp.score - a.opp.score)
-      .map((r) => ({
-        label: r.label,
-        address: r.address,
-        score: r.opp.score,
-        tier: r.opp.tier,
-        intent: r.opp.intent,
-        recommendation: recommendedAction(r.opp.tier, r.opp.intent),
-        reasons: r.opp.reasons,
-        riskFlag: r.risk.score >= 50,
-      }));
-
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8 lg:px-10">
         <HeaderCard />
-        <MonitorSummary data={data} />
         <OperatorNav />
 
         <div id="grp-ai" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={1} title="Automated screening" desc="The AI operator screens every account, auto-resolves the routine, and queues the rest for human review." />
+          <GroupHeader n={1} title="AI operations sweep" desc="Run the AI pass to screen every account and populate the console — protect + grow." />
           <AIOperator />
         </div>
 
-        <div id="grp-monitor" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={2} title="Monitored accounts" desc="Live KYC + AML (protect) and opportunity (grow) on every account." />
-          <IdentityTable rows={data.rows} />
-        </div>
-
-        <div id="grp-growth" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={3} title="Growth — opportunity inbox" desc="High-value prospects surfaced for BD / onboarding. Advisory; the human decides." />
-          <GrowthInbox prospects={prospects} />
-        </div>
-
         <div id="grp-tools" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={4} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
+          <GroupHeader n={2} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
           <AmlScreening dead={demo.dead} />
           <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
           <AgentConsole alice={demo.alice} dead={demo.dead} />
