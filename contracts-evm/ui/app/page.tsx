@@ -450,14 +450,19 @@ export default async function Home() {
           <AIOperator />
         </div>
 
-        <div id="grp-tools" className="flex scroll-mt-6 flex-col gap-4 rounded-[28px] transition-shadow">
-          <GroupHeader n={2} title="Operator actions" desc="Manual tools to act on a specific account — screen, transfer policy, freeze / recover, onboard, wrap." />
-          <AmlScreening dead={demo.dead} />
-          <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
-          <AgentConsole alice={demo.alice} dead={demo.dead} />
-          <Onboard />
-          <WrapPanel />
-        </div>
+        <details id="grp-tools" className="scroll-mt-6 rounded-[28px] border border-white/10 bg-slate-900/40 p-2 backdrop-blur">
+          <summary className="cursor-pointer list-none rounded-2xl px-4 py-3 hover:bg-white/5">
+            <span className="text-sm font-semibold text-white">Manual operator tools</span>
+            <span className="ml-2 text-sm text-slate-400">— screen, transfer policy, freeze / recover, onboard, wrap (click to expand)</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-4 px-1">
+            <AmlScreening dead={demo.dead} />
+            <PaymentSimulator alice={demo.alice} bob={demo.bob} dead={demo.dead} />
+            <AgentConsole alice={demo.alice} dead={demo.dead} />
+            <Onboard />
+            <WrapPanel />
+          </div>
+        </details>
 
         <DemoControls />
       </main>
