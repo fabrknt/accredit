@@ -6,6 +6,7 @@ import { identityRegistryAbi, amlOracleAbi } from "@/lib/abis";
 import { addresses } from "@/lib/config";
 import { cohort } from "@/lib/cohort";
 import { decide } from "@/lib/operator";
+import { scoreOpportunity } from "@/lib/opportunity";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -27,6 +28,7 @@ async function runSweep() {
   const log: unknown[] = [];
   const escalations: unknown[] = [];
   let onchainActions = 0;
+  let prospects = 0;
 
   const attest = async (addr: Address, score: number, modelRef: Hex) => {
     const h = await wallet.writeContract({
@@ -54,6 +56,12 @@ async function runSweep() {
       pendingOnboard: Boolean(m.pendingOnboard) && !isVerified,
       alreadyFrozen: isFrozen,
     });
+
+    // Growth engine (advisory, no on-chain action): surface prospects on the same pass.
+    if (decision.band !== "sanctions") {
+      const opp = scoreOpportunity(m.growth ?? {});
+      if (opp.tier !== "lead") prospects++;
+    }
 
     let headline = "screened — no change";
     let tx: Hex | undefined;
@@ -127,6 +135,7 @@ async function runSweep() {
     coveragePct: 100,
     autoResolved,
     escalated: escalations.length,
+    prospects,
     onchainActions,
     elapsedSec: Math.round((Date.now() - startedAt) / 1000),
     manualEstimateMin: cohort.length * MANUAL_MIN_PER_ITEM,

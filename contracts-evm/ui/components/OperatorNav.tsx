@@ -3,7 +3,8 @@
 const GROUPS = [
   { n: "1", title: "Automated screening", target: "grp-ai" },
   { n: "2", title: "Monitored accounts", target: "grp-monitor" },
-  { n: "3", title: "Operator actions", target: "grp-tools" },
+  { n: "3", title: "Growth inbox", target: "grp-growth" },
+  { n: "4", title: "Operator actions", target: "grp-tools" },
 ] as const;
 
 export function OperatorNav() {
