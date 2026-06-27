@@ -15,9 +15,9 @@ It does **NOT** trade on the information, front-run, or act on anyone's pending 
 
 ## Opportunity score (mirror of the risk score — transparent, explainable)
 Per account, a 0–100 opportunity score from public/provided signals:
-- **holdings value** — cHSP balance held (on-chain, real).
+- **holdings value** — cUSDC balance held (on-chain, real).
 - **activity volume** — throughput / engagement (demo signal; on-chain history is thin on testnet).
-- **strategic alignment** — holds/uses HashKey-priority assets (HSP / RWA / key protocols).
+- **strategic alignment** — holds/uses HashKey-priority assets (USDC / RWA / key protocols).
 - **inbound capital (intent)** — large recent inbound / accumulation = "about to do something important."
 - **growth** — rising activity.
 

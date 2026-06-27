@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const wallet = agentWallet();
     const owner = agentAddress();
 
-    // unwrap burns cHSP via burnFrom -> ensure the wrapper has a cHSP allowance.
+    // unwrap burns cUSDC via burnFrom -> ensure the wrapper has a cUSDC allowance.
     const allowance = await publicClient.readContract({
       address: addresses.token, abi: compliantTokenAbi, functionName: "allowance", args: [owner, addresses.wrapper],
     });

@@ -160,7 +160,7 @@ export function PaymentSimulator({ alice, bob, dead }: { alice: string; bob: str
           <input className={input} value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         <div>
-          <div className="mb-1 text-xs text-slate-400">Amount (cHSP)</div>
+          <div className="mb-1 text-xs text-slate-400">Amount (cUSDC)</div>
           <input className={`${input} w-32`} value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
       </div>
@@ -250,7 +250,7 @@ export function Onboard() {
     <section className={card}>
       <p className={label}>Onboard</p>
       <h2 className="mt-2 text-xl font-semibold text-white">KYC-register a new participant</h2>
-      <p className="mt-1 text-sm text-slate-400">Verify identity and run the initial AML screen — required before holding cHSP.</p>
+      <p className="mt-1 text-sm text-slate-400">Verify identity and run the initial AML screen — required before holding cUSDC.</p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <div>
           <div className="mb-1 text-xs text-slate-400">Address</div>
@@ -298,8 +298,8 @@ export function WrapPanel() {
   return (
     <section className={card}>
       <p className={label}>Compliant Wrapping</p>
-      <h2 className="mt-2 text-xl font-semibold text-white">Wrap HSP → cHSP 1:1 (compliance-gated)</h2>
-      <p className="mt-1 text-sm text-slate-400">Pull existing HSP liquidity into the compliance layer, 1:1.</p>
+      <h2 className="mt-2 text-xl font-semibold text-white">Wrap USDC → cUSDC 1:1 (compliance-gated)</h2>
+      <p className="mt-1 text-sm text-slate-400">Pull existing USDC liquidity into the compliance layer, 1:1.</p>
       <div className="mt-4">
         <div className="mb-1 text-xs text-slate-400">Amount</div>
         <input className={`${input} w-40`} value={amount} onChange={(e) => setAmount(e.target.value)} />

@@ -19,7 +19,7 @@ const SANCTIONED = "0x000000000000000000000000000000000000dead" as Address; // o
 
 export const cohort: CohortMember[] = [
   { label: "Acme Treasury", address: "0x00000000000000000000000000000000c0ffee10", signals: { txCount: 6 },
-    growth: { strategic: true, volume: 90, growth: 80, inbound: 30 }, note: "Clean + strategic (HSP/RWA) → Strategic prospect" },
+    growth: { strategic: true, volume: 90, growth: 80, inbound: 30 }, note: "Clean + strategic (USDC/RWA) → Strategic prospect" },
   { label: "Beacon Fund", address: "0x00000000000000000000000000000000c0ffee11", signals: { txCount: 8 },
     growth: { volume: 95, growth: 90, inbound: 40 }, note: "Clean, high activity → Priority prospect" },
   { label: "New Applicant", address: "0x00000000000000000000000000000000c0ffee12", signals: { txCount: 4 }, pendingOnboard: true,

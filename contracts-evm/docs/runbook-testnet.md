@@ -52,7 +52,7 @@ export TOKEN=0x...
 
 ## 3. Bootstrap the demo state
 
-Seed two demo identities, AML attestations, and mint demo cHSP to `DEMO_ALICE`:
+Seed two demo identities, AML attestations, and mint demo cUSDC to `DEMO_ALICE`:
 
 ```bash
 forge script script/Bootstrap.s.sol --rpc-url hashkey_testnet --broadcast
@@ -63,7 +63,7 @@ Bootstrap details:
 - Jurisdiction is `392` (Japan)
 - Expiry is `0` (no expiry)
 - AML scores are demo-low and tagged with an on-chain `modelRef`
-- `DEMO_ALICE` receives `1000e18` cHSP
+- `DEMO_ALICE` receives `1000e18` cUSDC
 
 ## 4. Sanity-check with `cast`
 
@@ -83,8 +83,8 @@ cast call "$AML" "isClean(address,uint8,uint64)(bool)" "$DEMO_ALICE" 50 2592000 
 ```
 
 Expected results:
-- token name = `Compliant HSP`
-- token symbol = `cHSP`
+- token name = `Compliant USDC`
+- token symbol = `cUSDC`
 - `isVerified(..., 1)` = `true`
 - `isClean(..., 50, 30 days)` = `true`
 
@@ -105,5 +105,5 @@ If you want source verification through Foundry and have an explorer API key:
 forge verify-contract --chain 133 --verifier blockscout --verifier-url https://testnet-explorer.hsk.xyz/api "$REGISTRY" src/IdentityRegistry.sol:IdentityRegistry
 forge verify-contract --chain 133 --verifier blockscout --verifier-url https://testnet-explorer.hsk.xyz/api "$AML" src/AmlOracle.sol:AmlOracle
 forge verify-contract --chain 133 --verifier blockscout --verifier-url https://testnet-explorer.hsk.xyz/api "$COMPLIANCE" src/ModularCompliance.sol:ModularCompliance --constructor-args "$(cast abi-encode "constructor(address,address,address)" "$(cast wallet address --private-key "$PRIVATE_KEY")" "$REGISTRY" "$AML")"
-forge verify-contract --chain 133 --verifier blockscout --verifier-url https://testnet-explorer.hsk.xyz/api "$TOKEN" src/CompliantToken.sol:CompliantToken --constructor-args "$(cast abi-encode "constructor(string,string,address,address)" "Compliant HSP" "cHSP" "$(cast wallet address --private-key "$PRIVATE_KEY")" "$COMPLIANCE")"
+forge verify-contract --chain 133 --verifier blockscout --verifier-url https://testnet-explorer.hsk.xyz/api "$TOKEN" src/CompliantToken.sol:CompliantToken --constructor-args "$(cast abi-encode "constructor(string,string,address,address)" "Compliant USDC" "cUSDC" "$(cast wallet address --private-key "$PRIVATE_KEY")" "$COMPLIANCE")"
 ```

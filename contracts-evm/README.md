@@ -38,19 +38,19 @@ Explorer: https://testnet-explorer.hsk.xyz
 
 | Contract | Address |
 |---|---|
-| IdentityRegistry | [`0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63`](https://testnet-explorer.hsk.xyz/address/0x0c4a5f00786c9b4a7f65d9c96d7e6f6a020afe63) |
-| AmlOracle | [`0x828976cc4ca8c4d243c5a6c4366145c1f499d70c`](https://testnet-explorer.hsk.xyz/address/0x828976cc4ca8c4d243c5a6c4366145c1f499d70c) |
-| ModularCompliance | [`0x4be4dd8a745d8d72842c77e9849eda0691529c53`](https://testnet-explorer.hsk.xyz/address/0x4be4dd8a745d8d72842c77e9849eda0691529c53) |
-| CompliantToken (cHSP) | [`0x0457d8336917075838d0acd76862f057a132d308`](https://testnet-explorer.hsk.xyz/address/0x0457d8336917075838d0acd76862f057a132d308) |
-| MockHSP (test underlying) | [`0x697953a4400d78c65a93844b271b6eae5397cbe9`](https://testnet-explorer.hsk.xyz/address/0x697953a4400d78c65a93844b271b6eae5397cbe9) |
-| CompliantWrapper | [`0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49`](https://testnet-explorer.hsk.xyz/address/0xb4236a2679adb384fe8e6cdd68ca1e27a6d71d49) |
+| IdentityRegistry | [`0x0c35d7c98566166f59b40d425e96a67f74d7ec1a`](https://testnet-explorer.hsk.xyz/address/0x0c35d7c98566166f59b40d425e96a67f74d7ec1a) |
+| AmlOracle | [`0x1e8b6ad17e782fa40a57178b4921ffffec7031ac`](https://testnet-explorer.hsk.xyz/address/0x1e8b6ad17e782fa40a57178b4921ffffec7031ac) |
+| ModularCompliance | [`0xa645d67f748acb58e0043dfd7ce72fd30219f970`](https://testnet-explorer.hsk.xyz/address/0xa645d67f748acb58e0043dfd7ce72fd30219f970) |
+| CompliantToken (cUSDC) | [`0x321a3f59b8b98babcdab10766785e76f08a5e9de`](https://testnet-explorer.hsk.xyz/address/0x321a3f59b8b98babcdab10766785e76f08a5e9de) |
+| MockUSDC (test underlying) | [`0x86bcb8129ad21e187a56306c411888859ae10469`](https://testnet-explorer.hsk.xyz/address/0x86bcb8129ad21e187a56306c411888859ae10469) |
+| CompliantWrapper | [`0xe9c5d0c5b393a441d1ec419e45af96d3149d0234`](https://testnet-explorer.hsk.xyz/address/0xe9c5d0c5b393a441d1ec419e45af96d3149d0234) |
 
 Deployment record (incl. tx hashes): [`docs/deployment-testnet.md`](docs/deployment-testnet.md).
 
 ## What's here
 - **`src/`** — the on-chain compliance stack (Solidity, ERC-3643-style) = the operator's tools:
   IdentityRegistry (KYC + freeze), AmlOracle (on-chain AML attestations), ModularCompliance
-  (transfer/receive/redeem gates), CompliantToken (cHSP), CompliantWrapper, MockHSP. **22 Foundry tests.**
+  (transfer/receive/redeem gates), CompliantToken (cUSDC), CompliantWrapper, MockUSDC. **22 Foundry tests.**
 - **`scorer/`** — the off-chain AI-AML risk model: a deterministic, explainable logistic-regression
   classifier (held-out acc ~0.97); its model hash is anchored on-chain as `modelRef`. **14 tests.**
 - **`ui/`** — the **AI operations console** (Next.js): standby → one sweep → protect queue + growth
@@ -93,7 +93,7 @@ Deploy from scratch: [`docs/runbook-testnet.md`](docs/runbook-testnet.md).
 A working prototype of the operating-model shift, not a production system. The AML model is a
 hackathon-grade, explainable stand-in (designed to plug in MistTrack/Elliptic-grade intel); growth
 signals are partly demo-seeded (testnet history is thin); identity is per-address (full ONCHAINID /
-trusted-issuer is roadmap); the wrapper uses a MockHSP stand-in.
+trusted-issuer is roadmap); the wrapper uses a MockUSDC stand-in.
 
 ## Build process
 Built collaboratively by **Claude Code + Codex** under a cross-review discipline — task briefs in

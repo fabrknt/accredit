@@ -23,7 +23,7 @@ export const addresses = {
   aml: addr(process.env.AML),
   compliance: addr(process.env.COMPLIANCE),
   token: addr(process.env.TOKEN),
-  mockHsp: addr(process.env.MOCKHSP),
+  mockUsdc: addr(process.env.MOCKUSDC),
   wrapper: addr(process.env.WRAPPER),
 } as const;
 

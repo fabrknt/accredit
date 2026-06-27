@@ -7,7 +7,7 @@ import {
   compliantTokenAbi,
   compliantWrapperAbi,
   identityRegistryAbi,
-  mockHspAbi,
+  mockUsdcAbi,
   modularComplianceAbi,
 } from "@/lib/abis";
 import { publicClient } from "@/lib/chain";
@@ -60,8 +60,8 @@ const HEADER_LINKS = [
   { label: "Registry", address: addresses.registry },
   { label: "AML Oracle", address: addresses.aml },
   { label: "Compliance", address: addresses.compliance },
-  { label: "cHSP", address: addresses.token },
-  { label: "MockHSP", address: addresses.mockHsp },
+  { label: "cUSDC", address: addresses.token },
+  { label: "MockUSDC", address: addresses.mockUsdc },
   { label: "Wrapper", address: addresses.wrapper },
 ] as const;
 
@@ -216,8 +216,8 @@ async function loadDashboardData(): Promise<DashboardData> {
       args: [deployer],
     }),
     publicClient.readContract({
-      address: addresses.mockHsp,
-      abi: mockHspAbi,
+      address: addresses.mockUsdc,
+      abi: mockUsdcAbi,
       functionName: "balanceOf",
       args: [addresses.wrapper],
     }),
@@ -284,7 +284,7 @@ function IdentityTable({ rows }: { rows: IdentityRow[] }) {
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Identity & Risk</p>
           <h2 className="mt-2 text-xl font-semibold text-white">Live KYC and AML status</h2>
-          <p className="mt-1 text-sm text-slate-400">Who may hold cHSP — and their live AML risk.</p>
+          <p className="mt-1 text-sm text-slate-400">Who may hold cUSDC — and their live AML risk.</p>
         </div>
         <div className="text-sm text-slate-400">Alice, Bob, and the demo watchlist address</div>
       </div>
@@ -297,7 +297,7 @@ function IdentityTable({ rows }: { rows: IdentityRow[] }) {
               <th className="pb-3 pr-6 font-medium">Frozen</th>
               <th className="pb-3 pr-6 font-medium">Identity</th>
               <th className="pb-3 pr-6 font-medium">AML</th>
-              <th className="pb-3 pr-6 font-medium">cHSP</th>
+              <th className="pb-3 pr-6 font-medium">cUSDC</th>
               <th className="pb-3 font-medium">Opportunity</th>
             </tr>
           </thead>

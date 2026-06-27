@@ -136,7 +136,7 @@ ensure_alice_token_balance() {
   alice_balance="$(erc20_balance "$TOKEN" "$DEMO_ALICE")"
   if big_lt "$alice_balance" "$ALICE_TARGET_BALANCE_WEI"; then
     mint_amount="$(big_sub "$ALICE_TARGET_BALANCE_WEI" "$alice_balance")"
-    echo "Alice cHSP balance low; topping up to $(format_token "$ALICE_TARGET_BALANCE_WEI") cHSP."
+    echo "Alice cUSDC balance low; topping up to $(format_token "$ALICE_TARGET_BALANCE_WEI") cUSDC."
     mint_output="$(send_and_capture cast send "$TOKEN" \
       "mint(address,uint256)" "$DEMO_ALICE" "$mint_amount" \
       --private-key "$PRIVATE_KEY" \
@@ -217,11 +217,11 @@ ensure_deployer_compliant() {
 
 ensure_mockhsp_balance_and_allowance() {
   local balance allowance mint_amount mint_output mint_tx approve_output approve_tx
-  balance="$(erc20_balance "$MOCKHSP" "$DEPLOYER_ADDRESS")"
+  balance="$(erc20_balance "$MOCKUSDC" "$DEPLOYER_ADDRESS")"
   if big_lt "$balance" "$WRAP_AMOUNT_WEI"; then
     mint_amount="$(big_sub "$WRAP_AMOUNT_WEI" "$balance")"
-    echo "Deployer MockHSP balance low; minting up to $(format_token "$WRAP_AMOUNT_WEI") HSP."
-    mint_output="$(send_and_capture cast send "$MOCKHSP" \
+    echo "Deployer MockUSDC balance low; minting up to $(format_token "$WRAP_AMOUNT_WEI") USDC."
+    mint_output="$(send_and_capture cast send "$MOCKUSDC" \
       "mint(address,uint256)" "$DEPLOYER_ADDRESS" "$mint_amount" \
       --private-key "$PRIVATE_KEY" \
       --rpc-url "$RPC_URL")"
@@ -229,10 +229,10 @@ ensure_mockhsp_balance_and_allowance() {
     echo "Mint tx: ${mint_tx}"
   fi
 
-  allowance="$(erc20_allowance "$MOCKHSP" "$DEPLOYER_ADDRESS" "$WRAPPER")"
+  allowance="$(erc20_allowance "$MOCKUSDC" "$DEPLOYER_ADDRESS" "$WRAPPER")"
   if big_lt "$allowance" "$WRAP_AMOUNT_WEI"; then
-    echo "Approving wrapper to spend MockHSP."
-    approve_output="$(send_and_capture cast send "$MOCKHSP" \
+    echo "Approving wrapper to spend MockUSDC."
+    approve_output="$(send_and_capture cast send "$MOCKUSDC" \
       "approve(address,uint256)" "$WRAPPER" "$MAX_UINT256" \
       --private-key "$PRIVATE_KEY" \
       --rpc-url "$RPC_URL")"
@@ -265,7 +265,7 @@ require_env REGISTRY
 require_env AML
 require_env COMPLIANCE
 require_env TOKEN
-require_env MOCKHSP
+require_env MOCKUSDC
 require_env WRAPPER
 require_env DEMO_ALICE
 require_env DEMO_BOB
@@ -301,7 +301,7 @@ for entry in \
   "AmlOracle:$AML" \
   "ModularCompliance:$COMPLIANCE" \
   "CompliantToken:$TOKEN" \
-  "MockHSP:$MOCKHSP" \
+  "MockUSDC:$MOCKUSDC" \
   "CompliantWrapper:$WRAPPER"
 do
   name="${entry%%:*}"
@@ -318,7 +318,7 @@ echo "Alice: ${DEMO_ALICE}"
 echo "Bob:   ${DEMO_BOB}"
 echo "isVerified(alice,1): $(cast call "$REGISTRY" "isVerified(address,uint8)(bool)" "$DEMO_ALICE" 1 --rpc-url "$RPC_URL" | tr -d '[:space:]')"
 echo "isClean(alice,50,30d): $(cast call "$AML" "isClean(address,uint8,uint64)(bool)" "$DEMO_ALICE" 50 "$THIRTY_DAYS_SECONDS" --rpc-url "$RPC_URL" | tr -d '[:space:]')"
-echo "balanceOf(alice): $(format_token "$(erc20_balance "$TOKEN" "$DEMO_ALICE")") cHSP"
+echo "balanceOf(alice): $(format_token "$(erc20_balance "$TOKEN" "$DEMO_ALICE")") cUSDC"
 pause_between_beats
 
 print_header "2" "Compliant Payment"
@@ -326,7 +326,7 @@ ensure_alice_gas
 alice_balance_before="$(format_token "$(erc20_balance "$TOKEN" "$DEMO_ALICE")")"
 bob_balance_before_wei="$(erc20_balance "$TOKEN" "$DEMO_BOB")"
 bob_balance_before="$(format_token "$bob_balance_before_wei")"
-echo "Bob balance before: ${bob_balance_before} cHSP"
+echo "Bob balance before: ${bob_balance_before} cUSDC"
 payment_output="$(send_and_capture cast send "$TOKEN" \
   "transfer(address,uint256)" "$DEMO_BOB" "$TRANSFER_AMOUNT_WEI" \
   --private-key "$ALICE_KEY" \
@@ -335,8 +335,8 @@ payment_tx="$(extract_tx_hash "$payment_output")"
 bob_balance_after_wei="$(erc20_balance "$TOKEN" "$DEMO_BOB")"
 bob_balance_after="$(format_token "$bob_balance_after_wei")"
 alice_balance_after="$(format_token "$(erc20_balance "$TOKEN" "$DEMO_ALICE")")"
-echo "Alice balance: ${alice_balance_before} -> ${alice_balance_after} cHSP"
-echo "Bob balance:   ${bob_balance_before} -> ${bob_balance_after} cHSP"
+echo "Alice balance: ${alice_balance_before} -> ${alice_balance_after} cUSDC"
+echo "Bob balance:   ${bob_balance_before} -> ${bob_balance_after} cUSDC"
 echo "Tx hash: ${payment_tx}"
 echo "Explorer: https://testnet-explorer.hsk.xyz/tx/${payment_tx}"
 pause_between_beats
@@ -395,9 +395,9 @@ pause_between_beats
 print_header "5" "Wrap / Unwrap"
 ensure_deployer_compliant
 ensure_mockhsp_balance_and_allowance
-deployer_hsp_before_wei="$(erc20_balance "$MOCKHSP" "$DEPLOYER_ADDRESS")"
+deployer_hsp_before_wei="$(erc20_balance "$MOCKUSDC" "$DEPLOYER_ADDRESS")"
 deployer_chsp_before_wei="$(erc20_balance "$TOKEN" "$DEPLOYER_ADDRESS")"
-wrapper_hsp_before_wei="$(erc20_balance "$MOCKHSP" "$WRAPPER")"
+wrapper_hsp_before_wei="$(erc20_balance "$MOCKUSDC" "$WRAPPER")"
 
 wrap_output="$(send_and_capture cast send "$WRAPPER" \
   "wrap(uint256)" "$WRAP_AMOUNT_WEI" \
@@ -411,14 +411,14 @@ unwrap_output="$(send_and_capture cast send "$WRAPPER" \
   --rpc-url "$RPC_URL")"
 unwrap_tx="$(extract_tx_hash "$unwrap_output")"
 
-deployer_hsp_after_wei="$(erc20_balance "$MOCKHSP" "$DEPLOYER_ADDRESS")"
+deployer_hsp_after_wei="$(erc20_balance "$MOCKUSDC" "$DEPLOYER_ADDRESS")"
 deployer_chsp_after_wei="$(erc20_balance "$TOKEN" "$DEPLOYER_ADDRESS")"
-wrapper_hsp_after_wei="$(erc20_balance "$MOCKHSP" "$WRAPPER")"
+wrapper_hsp_after_wei="$(erc20_balance "$MOCKUSDC" "$WRAPPER")"
 
-echo "Deployer MockHSP: $(format_token "$deployer_hsp_before_wei") -> $(format_token "$deployer_hsp_after_wei") HSP"
-echo "Deployer cHSP:    $(format_token "$deployer_chsp_before_wei") -> $(format_token "$deployer_chsp_after_wei") cHSP"
-echo "Wrapper locked:   $(format_token "$wrapper_hsp_before_wei") -> $(format_token "$wrapper_hsp_after_wei") HSP"
-echo "Net effect this beat: +200 cHSP / -200 HSP for deployer, +200 HSP locked in wrapper (1:1 backing)."
+echo "Deployer MockUSDC: $(format_token "$deployer_hsp_before_wei") -> $(format_token "$deployer_hsp_after_wei") USDC"
+echo "Deployer cUSDC:    $(format_token "$deployer_chsp_before_wei") -> $(format_token "$deployer_chsp_after_wei") cUSDC"
+echo "Wrapper locked:   $(format_token "$wrapper_hsp_before_wei") -> $(format_token "$wrapper_hsp_after_wei") USDC"
+echo "Net effect this beat: +200 cUSDC / -200 USDC for deployer, +200 USDC locked in wrapper (1:1 backing)."
 echo "Wrap tx:   ${wrap_tx}"
 echo "Unwrap tx: ${unwrap_tx}"
 

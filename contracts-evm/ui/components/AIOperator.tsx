@@ -166,7 +166,7 @@ export function AIOperator() {
               <thead>
                 <tr className="text-xs uppercase tracking-[0.2em] text-slate-500">
                   <th className="pb-2 pr-6">Account</th><th className="pb-2 pr-6">KYC</th><th className="pb-2 pr-6">Risk</th>
-                  <th className="pb-2 pr-6">Opportunity</th><th className="pb-2 pr-6">Action</th><th className="pb-2">cHSP</th>
+                  <th className="pb-2 pr-6">Opportunity</th><th className="pb-2 pr-6">Action</th><th className="pb-2">cUSDC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/6">

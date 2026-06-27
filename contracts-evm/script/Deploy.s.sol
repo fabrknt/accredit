@@ -19,7 +19,7 @@ contract Deploy is Script {
         IdentityRegistry registry = new IdentityRegistry(admin);
         AmlOracle aml = new AmlOracle(admin);
         ModularCompliance compliance = new ModularCompliance(admin, registry, aml);
-        CompliantToken token = new CompliantToken("Compliant HSP", "cHSP", admin, compliance);
+        CompliantToken token = new CompliantToken("Compliant USDC", "cUSDC", admin, compliance);
 
         vm.stopBroadcast();
 
