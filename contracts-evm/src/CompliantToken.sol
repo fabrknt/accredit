@@ -10,7 +10,7 @@ import {ICompliance} from "./interfaces/ICompliance.sol";
 ///         EVM analogue of accredit's Solana Token-2022 transfer-hook program.
 ///         Mint (from == 0) and burn (to == 0) bypass the transfer gate so the
 ///         issuer can provision supply; peer-to-peer transfers are enforced.
-///         Intended use on HashKey: cHSP — a compliance-gated wrapper over HSP.
+///         Intended use on HashKey: cUSDC — a compliance-gated wrapper over USDC.
 contract CompliantToken is ERC20, AccessControl {
     bytes32 public constant ISSUER_ROLE = keccak256("ISSUER_ROLE");
     bytes32 public constant AGENT_ROLE = keccak256("AGENT_ROLE");
@@ -55,7 +55,7 @@ contract CompliantToken is ERC20, AccessControl {
     }
 
     /// @notice Redeem (burn) another holder's balance using their ERC-20 allowance.
-    ///         Intended for wrappers that return underlying 1:1 after burning cHSP.
+    ///         Intended for wrappers that return underlying 1:1 after burning cUSDC.
     function burnFrom(address from, uint256 amount) external {
         _spendAllowance(from, _msgSender(), amount);
         (bool allowed, string memory reason) = compliance.canRedeem(from, amount);

@@ -6,7 +6,7 @@ import {IdentityRegistry} from "../src/IdentityRegistry.sol";
 import {AmlOracle} from "../src/AmlOracle.sol";
 import {ModularCompliance} from "../src/ModularCompliance.sol";
 import {CompliantToken} from "../src/CompliantToken.sol";
-import {MockHSP} from "../src/MockHSP.sol";
+import {MockUSDC} from "../src/MockUSDC.sol";
 import {CompliantWrapper} from "../src/CompliantWrapper.sol";
 
 contract CompliantWrapperTest is Test {
@@ -14,7 +14,7 @@ contract CompliantWrapperTest is Test {
     AmlOracle aml;
     ModularCompliance compliance;
     CompliantToken token;
-    MockHSP underlying;
+    MockUSDC underlying;
     CompliantWrapper wrapper;
 
     address admin = address(this);
@@ -28,8 +28,8 @@ contract CompliantWrapperTest is Test {
         registry = new IdentityRegistry(admin);
         aml = new AmlOracle(admin);
         compliance = new ModularCompliance(admin, registry, aml);
-        token = new CompliantToken("Compliant HSP", "cHSP", admin, compliance);
-        underlying = new MockHSP(admin);
+        token = new CompliantToken("Compliant USDC", "cUSDC", admin, compliance);
+        underlying = new MockUSDC(admin);
         wrapper = new CompliantWrapper(underlying, token);
 
         token.grantRole(token.ISSUER_ROLE(), address(wrapper));

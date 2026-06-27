@@ -25,7 +25,7 @@ contract ComplianceTest is Test {
         registry = new IdentityRegistry(admin);
         aml = new AmlOracle(admin);
         compliance = new ModularCompliance(admin, registry, aml);
-        token = new CompliantToken("Compliant HSP", "cHSP", admin, compliance);
+        token = new CompliantToken("Compliant USDC", "cUSDC", admin, compliance);
 
         // Alice + Bob are fully onboarded: KYC level 2, AML clean.
         registry.registerIdentity(alice, 2, 392, 0); // 392 = Japan

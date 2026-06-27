@@ -56,5 +56,5 @@ other agent.
 ## Project context
 
 EVM rebuild of accredit's on-chain compliance enforcement for the HashKey Chain
-Horizon Hackathon (Tokyo, Jun 18–Jul 11 2026). Axis: compliance-enforced HSP payments
+Horizon Hackathon (Tokyo, Jun 18–Jul 11 2026). Axis: compliance-enforced USDC payments
 + AI-AML transfer screening. See `README.md` for chain params and contract map.

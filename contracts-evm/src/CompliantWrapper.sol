@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {CompliantToken} from "./CompliantToken.sol";
 
 /// @title CompliantWrapper
-/// @notice Wraps HSP 1:1 into compliance-gated cHSP and unwraps back to underlying.
+/// @notice Wraps USDC 1:1 into compliance-gated cUSDC and unwraps back to underlying.
 contract CompliantWrapper {
     IERC20 public immutable underlying;
     CompliantToken public immutable cToken;

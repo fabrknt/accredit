@@ -37,7 +37,7 @@ faster, not absent. That's what a regulated operator can actually adopt.
 
 ## What's live (HashKey testnet, chainId 133)
 - ERC-3643-style stack deployed + verifiable: IdentityRegistry, AmlOracle, ModularCompliance,
-  CompliantToken (cHSP), CompliantWrapper.
+  CompliantToken (cUSDC), CompliantWrapper.
 - A trained, explainable AML risk model + a transparent opportunity model, both anchored/auditable.
 - The **AI operations console**: one sweep → protect (queue) + grow (inbox) + accounts + audit log.
 - Live sweep: 5 screened / 100% coverage / auto-resolved + escalated + prospects surfaced in ~1 min
@@ -47,7 +47,7 @@ faster, not absent. That's what a regulated operator can actually adopt.
 A working prototype of the operating-model shift, not a production system. The AML model is a
 hackathon-grade, explainable stand-in (designed to plug in MistTrack/Elliptic-grade intel); the
 growth signals are partly demo-seeded (testnet has thin real history); identity is per-address
-(full ONCHAINID/trusted-issuer is roadmap); the wrapper uses a MockHSP stand-in.
+(full ONCHAINID/trusted-issuer is roadmap); the wrapper uses a MockUSDC stand-in.
 
 ## The ask
 The compliance *primitives* are commoditizing on HashKey. The durable layer is the **autonomous,

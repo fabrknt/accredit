@@ -6,7 +6,7 @@ export type OppTier = "lead" | "priority" | "strategic";
 
 export interface GrowthSignals {
   volume?: number; // 0–100 activity / throughput
-  strategic?: boolean; // holds/uses HashKey-priority assets (HSP / RWA / key protocols)
+  strategic?: boolean; // holds/uses HashKey-priority assets (USDC / RWA / key protocols)
   inbound?: number; // 0–100 recent inbound capital — intent ("about to do something")
   growth?: number; // 0–100 activity growth
 }
@@ -34,7 +34,7 @@ export function scoreOpportunity(signals: GrowthSignals): OppResult {
 
   let total = 0;
   total += add("strategic", W.strategic, signals.strategic ? 100 : 0,
-    signals.strategic ? "Holds/uses HashKey-priority assets (HSP/RWA)." : "No strategic asset alignment.");
+    signals.strategic ? "Holds/uses HashKey-priority assets (USDC/RWA)." : "No strategic asset alignment.");
   total += add("inbound", W.inbound, signals.inbound ?? 0,
     (signals.inbound ?? 0) >= 50 ? "Large recent inbound capital — time-sensitive." : "No notable inbound capital.");
   total += add("volume", W.volume, signals.volume ?? 0, `Activity volume ${signals.volume ?? 0}/100.`);

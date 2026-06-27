@@ -6,11 +6,11 @@ through server-side API routes that sign with keys held only on the server.
 
 ## Sections
 - **Header** — chain + the 6 deployed contract addresses (explorer links).
-- **Identity & Risk** — live KYC verified / frozen / identity / AML score+band + cHSP balance for Alice, Bob, the watchlisted address.
+- **Identity & Risk** — live KYC verified / frozen / identity / AML score+band + cUSDC balance for Alice, Bob, the watchlisted address.
 - **AI-AML Screening** — score any address (with optional counterparty), see the explainable per-feature breakdown, and anchor the verdict on-chain (`attestRisk`).
 - **Payment Simulator** — `canTransfer` preview + real execute; Alice→Bob (allowed) vs Alice→flagged (blocked: "recipient failed AML screen").
 - **Agent Console** — freeze / unfreeze (ERC-3643 agent power).
-- **Compliant Wrapping** — wrap/unwrap MockHSP ↔ cHSP 1:1.
+- **Compliant Wrapping** — wrap/unwrap MockUSDC ↔ cUSDC 1:1.
 
 ## Run
 

@@ -296,7 +296,7 @@ export const compliantTokenAbi = [
   },
 ] as const;
 
-export const mockHspAbi = [
+export const mockUsdcAbi = [
   {
     type: "function",
     stateMutability: "view",
