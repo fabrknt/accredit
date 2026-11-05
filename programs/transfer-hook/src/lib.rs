@@ -70,6 +70,12 @@ pub enum TransferHookError {
 
     #[msg("Extra account meta list has an unexpected size")]
     InvalidExtraAccountMetaList,
+
+    #[msg("Whitelist entry is already active")]
+    EntryAlreadyActive,
+
+    #[msg("Blacklist reason is too long")]
+    ReasonTooLong,
 }
 
 #[program]
@@ -184,6 +190,43 @@ pub mod transfer_hook {
         Ok(())
     }
 
+    /// Re-activate a removed whitelist entry with fresh KYC parameters.
+    /// The entry PDA is kept on removal, so this is the way back in.
+    pub fn reinstate_whitelist(
+        ctx: Context<ReinstateWhitelist>,
+        params: ReinstateWhitelistParams,
+    ) -> Result<()> {
+        let clock = Clock::get()?;
+        let registry = &mut ctx.accounts.registry;
+        let entry = &mut ctx.accounts.whitelist_entry;
+
+        require!(!entry.is_active, TransferHookError::EntryAlreadyActive);
+
+        entry.kyc_level = params.kyc_level;
+        entry.jurisdiction = params.jurisdiction;
+        entry.kyc_hash = params.kyc_hash;
+        entry.is_active = true;
+        entry.daily_limit = params.daily_limit;
+        entry.daily_volume = 0;
+        entry.volume_reset_time = clock.unix_timestamp;
+        entry.verified_at = clock.unix_timestamp;
+        entry.expiry_timestamp = params.expiry_timestamp;
+        entry.last_activity = clock.unix_timestamp;
+
+        registry.whitelist_count = registry.whitelist_count.saturating_add(1);
+        registry.updated_at = clock.unix_timestamp;
+
+        emit!(WalletWhitelisted {
+            wallet: entry.wallet,
+            kyc_level: params.kyc_level,
+            jurisdiction: params.jurisdiction,
+            expiry: params.expiry_timestamp,
+            timestamp: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
+
     /// Add wallet to blacklist (SSS-2 compliance)
     pub fn add_to_blacklist(
         ctx: Context<AddToBlacklist>,
@@ -192,6 +235,8 @@ pub mod transfer_hook {
         let clock = Clock::get()?;
         let registry = &mut ctx.accounts.registry;
         let entry = &mut ctx.accounts.blacklist_entry;
+
+        require!(params.reason.len() <= MAX_REASON_LEN, TransferHookError::ReasonTooLong);
 
         entry.wallet = params.wallet;
         entry.registry = registry.key();
@@ -229,6 +274,32 @@ pub mod transfer_hook {
         emit!(WalletUnblacklisted {
             wallet: entry.wallet,
             removed_by: ctx.accounts.authority.key(),
+            timestamp: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
+
+    /// Re-activate a removed blacklist entry (the PDA is kept on removal).
+    pub fn reinstate_blacklist(ctx: Context<ReinstateBlacklist>, reason: String) -> Result<()> {
+        let clock = Clock::get()?;
+        let registry = &mut ctx.accounts.registry;
+        let entry = &mut ctx.accounts.blacklist_entry;
+
+        require!(!entry.is_active, TransferHookError::AlreadyBlacklisted);
+        require!(reason.len() <= MAX_REASON_LEN, TransferHookError::ReasonTooLong);
+
+        entry.reason = reason;
+        entry.is_active = true;
+        entry.added_by = ctx.accounts.authority.key();
+        entry.added_at = clock.unix_timestamp;
+        entry.removed_at = 0;
+        registry.updated_at = clock.unix_timestamp;
+
+        emit!(WalletBlacklisted {
+            wallet: entry.wallet,
+            reason: entry.reason.clone(),
+            added_by: ctx.accounts.authority.key(),
             timestamp: clock.unix_timestamp,
         });
 
@@ -565,6 +636,38 @@ pub struct UpdateWhitelist<'info> {
     pub whitelist_entry: Account<'info, WhitelistEntry>,
 }
 
+#[derive(Accounts)]
+pub struct ReinstateWhitelist<'info> {
+    #[account(
+        constraint = authority.key() == registry.authority @ TransferHookError::Unauthorized
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [KycRegistry::SEED_PREFIX, registry.mint.as_ref()],
+        bump = registry.bump,
+    )]
+    pub registry: Account<'info, KycRegistry>,
+
+    #[account(
+        mut,
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), whitelist_entry.wallet.as_ref()],
+        bump = whitelist_entry.bump,
+        constraint = whitelist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
+    )]
+    pub whitelist_entry: Account<'info, WhitelistEntry>,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct ReinstateWhitelistParams {
+    pub kyc_level: KycLevel,
+    pub jurisdiction: Jurisdiction,
+    pub kyc_hash: [u8; 32],
+    pub daily_limit: u64,
+    pub expiry_timestamp: i64,
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AddToBlacklistParams {
     pub wallet: Pubkey,
@@ -601,6 +704,29 @@ pub struct AddToBlacklist<'info> {
 
 #[derive(Accounts)]
 pub struct RemoveFromBlacklist<'info> {
+    #[account(
+        constraint = authority.key() == registry.authority @ TransferHookError::Unauthorized
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [KycRegistry::SEED_PREFIX, registry.mint.as_ref()],
+        bump = registry.bump,
+    )]
+    pub registry: Account<'info, KycRegistry>,
+
+    #[account(
+        mut,
+        seeds = [BlacklistEntry::SEED_PREFIX, registry.key().as_ref(), blacklist_entry.wallet.as_ref()],
+        bump = blacklist_entry.bump,
+        constraint = blacklist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
+    )]
+    pub blacklist_entry: Account<'info, BlacklistEntry>,
+}
+
+#[derive(Accounts)]
+pub struct ReinstateBlacklist<'info> {
     #[account(
         constraint = authority.key() == registry.authority @ TransferHookError::Unauthorized
     )]

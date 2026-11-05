@@ -98,6 +98,14 @@ Deactivate a wallet's whitelist entry (sets `is_active = false`). Does not close
 | `registry` | No | Yes | KycRegistry PDA |
 | `whitelist_entry` | No | Yes | WhitelistEntry PDA |
 
+### `reinstate_whitelist`
+
+Re-activate a removed entry (`is_active == false`) with fresh parameters: `kyc_level`, `jurisdiction`, `kyc_hash`, `daily_limit`, `expiry_timestamp`. Resets the daily volume and `verified_at`, and counts the wallet again in `whitelist_count`. Fails with `EntryAlreadyActive` on an active entry. Same accounts as `remove_from_whitelist`.
+
+### `reinstate_blacklist`
+
+Re-activate a removed blacklist entry with a new `reason` (at most 64 bytes). Sets `added_by`/`added_at` and clears `removed_at`. Fails with `AlreadyBlacklisted` on an active entry. Accounts: `authority` (signer), `registry` (writable), `blacklist_entry` (writable).
+
 ### `update_kyc_level`
 
 Update KYC level, jurisdiction, and expiry for an existing whitelist entry.
