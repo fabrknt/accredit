@@ -396,6 +396,13 @@ pub mod transfer_hook {
             TransferHookError::TransferExceedsLimit
         );
 
+        // Record the sender's daily volume so the next transfer's
+        // can_transfer check sees it (the meta for this entry is writable).
+        let sender_entry = &mut ctx.accounts.sender_whitelist;
+        sender_entry.record_transfer(amount, clock.unix_timestamp);
+        let sender_entry = &ctx.accounts.sender_whitelist;
+        let recipient_entry = &ctx.accounts.recipient_whitelist;
+
         emit!(TransferValidated {
             sender: sender_entry.wallet,
             recipient: recipient_entry.wallet,
@@ -695,7 +702,9 @@ pub struct Execute<'info> {
     pub registry: Account<'info, KycRegistry>,
 
     /// Whitelist entry of the source token account's owner wallet
+    /// (writable: execute records the daily volume)
     #[account(
+        mut,
         seeds = [WhitelistEntry::SEED_PREFIX, source.owner.as_ref()],
         bump = sender_whitelist.bump,
         constraint = sender_whitelist.registry == registry.key() @ TransferHookError::SenderNotWhitelisted,

@@ -154,6 +154,8 @@ Main transfer hook entry point. Called automatically by Token-2022 on every tran
 9. Recipient jurisdiction is allowed
 10. Transfer amount within recipient's per-level limit
 
+On success, the transfer amount is added to the sender WhitelistEntry's `daily_volume` (reset after 24h), so `daily_limit` is enforced across transfers.
+
 **Accounts:**
 
 | Account | Signer | Writable | Description |
@@ -164,7 +166,7 @@ Main transfer hook entry point. Called automatically by Token-2022 on every tran
 | `owner` | No | No | Token owner |
 | `extra_account_meta_list` | No | No | Meta list |
 | `registry` | No | No | KycRegistry PDA |
-| `sender_whitelist` | No | No | WhitelistEntry PDA of the source owner wallet |
+| `sender_whitelist` | No | Yes | WhitelistEntry PDA of the source owner wallet (daily volume is recorded here) |
 | `recipient_whitelist` | No | No | WhitelistEntry PDA of the destination owner wallet |
 | `sender_blacklist` | No | No | BlacklistEntry PDA of the source owner wallet (may be empty) |
 | `recipient_blacklist` | No | No | BlacklistEntry PDA of the destination owner wallet (may be empty) |
