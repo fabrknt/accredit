@@ -12,6 +12,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount};
 use spl_transfer_hook_interface::instruction::ExecuteInstruction;
+use spl_discriminator::discriminator::SplDiscriminate;
 use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
 };
@@ -365,6 +366,10 @@ pub mod transfer_hook {
     /// 1. Registry active check
     /// 2. Blacklist check (SSS-2) — reject if either party is blacklisted
     /// 3. Whitelist check — verify KYC status, jurisdiction, limits
+    ///
+    /// Uses the SPL transfer-hook `Execute` discriminator so Token-2022's
+    /// hook call is dispatched here.
+    #[instruction(discriminator = ExecuteInstruction::SPL_DISCRIMINATOR_SLICE)]
     pub fn execute(ctx: Context<Execute>, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
 
@@ -445,35 +450,6 @@ pub mod transfer_hook {
         });
 
         Ok(())
-    }
-
-    /// Fallback instruction for transfer hook interface
-    pub fn fallback<'info>(
-        _program_id: &Pubkey,
-        _accounts: &'info [AccountInfo<'info>],
-        data: &[u8],
-    ) -> Result<()> {
-        use spl_discriminator::discriminator::SplDiscriminate;
-
-        if data.len() < 8 {
-            return Err(ProgramError::InvalidInstructionData.into());
-        }
-
-        let discriminator = &data[..8];
-        if discriminator == ExecuteInstruction::SPL_DISCRIMINATOR.as_slice() {
-            if data.len() < 16 {
-                return Err(ProgramError::InvalidInstructionData.into());
-            }
-            let amount = u64::from_le_bytes(
-                data[8..16]
-                    .try_into()
-                    .map_err(|_| ProgramError::InvalidInstructionData)?,
-            );
-            msg!("Transfer hook fallback: execute with amount {}", amount);
-            Ok(())
-        } else {
-            Err(ProgramError::InvalidInstructionData.into())
-        }
     }
 
     /// Pause the registry (emergency function)
