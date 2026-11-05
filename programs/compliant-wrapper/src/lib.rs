@@ -37,6 +37,12 @@ const WL_OFFSET_IS_ACTIVE: usize = 8 + 32 + 32 + 1 + 1 + 32; // 106
 const WL_OFFSET_EXPIRY: usize = 8 + 32 + 32 + 1 + 1 + 32 + 1 + 8 + 8 + 8 + 8; // 139
 const WL_MIN_SIZE: usize = 164;
 
+// transfer-hook KycRegistry layout: discriminator(8) + authority(32) + mint(32) + ...
+/// Anchor account discriminator of transfer-hook `KycRegistry`
+/// (sha256("account:KycRegistry")[..8]).
+const KYC_REGISTRY_DISCRIMINATOR: [u8; 8] = [204, 241, 19, 79, 46, 77, 56, 20];
+const KR_OFFSET_MINT: usize = 8 + 32; // 40
+
 #[program]
 pub mod compliant_wrapper {
     use super::*;
@@ -306,6 +312,10 @@ pub mod compliant_wrapper {
     /// program.
     pub fn update_kyc_registry(ctx: Context<UpdateKycRegistry>) -> Result<()> {
         let clock = Clock::get()?;
+        verify_kyc_registry(
+            &ctx.accounts.new_kyc_registry,
+            &ctx.accounts.wrapper_config.wrapped_mint,
+        )?;
         let config = &mut ctx.accounts.wrapper_config;
         let old_kyc_registry = config.kyc_registry;
         config.kyc_registry = ctx.accounts.new_kyc_registry.key();
@@ -326,6 +336,21 @@ pub mod compliant_wrapper {
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/// Verify that `registry` (already owner-checked as a transfer-hook account)
+/// is a transfer-hook KycRegistry for `wrapped_mint`.
+fn verify_kyc_registry(registry: &AccountInfo, wrapped_mint: &Pubkey) -> Result<()> {
+    let data = registry.try_borrow_data()?;
+    require!(
+        data.len() >= KR_OFFSET_MINT + 32 && data[..8] == KYC_REGISTRY_DISCRIMINATOR,
+        WrapperError::InvalidKycRegistry
+    );
+    require!(
+        data[KR_OFFSET_MINT..KR_OFFSET_MINT + 32] == wrapped_mint.to_bytes(),
+        WrapperError::InvalidKycRegistry
+    );
+    Ok(())
+}
 
 /// Verify that the user has a valid WhitelistEntry from the transfer-hook
 /// program by directly reading the account data.
@@ -572,7 +597,9 @@ pub struct UpdateKycRegistry<'info> {
     )]
     pub wrapper_config: Account<'info, WrapperConfig>,
 
-    /// CHECK: New transfer-hook KYC registry; must be owned by the transfer-hook program
+    /// CHECK: New transfer-hook KYC registry; must be owned by the transfer-hook
+    /// program and be the KycRegistry of wrapper_config.wrapped_mint
+    /// (checked in the handler)
     #[account(owner = TRANSFER_HOOK_ID @ WrapperError::UnauthorizedAccess)]
     pub new_kyc_registry: UncheckedAccount<'info>,
 }
@@ -642,4 +669,33 @@ pub struct WrapperKycRegistryUpdated {
     pub new_kyc_registry: Pubkey,
     pub updated_by: Pubkey,
     pub timestamp: i64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn kyc_registry_layout_matches_transfer_hook() {
+        use anchor_lang::Discriminator;
+        assert_eq!(
+            transfer_hook::state::KycRegistry::DISCRIMINATOR,
+            &KYC_REGISTRY_DISCRIMINATOR[..]
+        );
+        // mint follows authority
+        let reg = transfer_hook::state::KycRegistry {
+            authority: Pubkey::new_unique(),
+            mint: Pubkey::new_unique(),
+            whitelist_count: 0,
+            is_active: true,
+            require_kyc: true,
+            verified_only: true,
+            created_at: 0,
+            updated_at: 0,
+            bump: 0,
+        };
+        let mut data = Vec::new();
+        reg.try_serialize(&mut data).unwrap();
+        assert_eq!(&data[KR_OFFSET_MINT..KR_OFFSET_MINT + 32], reg.mint.as_ref());
+    }
 }

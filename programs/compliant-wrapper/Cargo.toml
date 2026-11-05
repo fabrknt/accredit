@@ -26,3 +26,6 @@ accredit-types = { workspace = true }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
+
+[dev-dependencies]
+transfer-hook = { path = "../transfer-hook", features = ["no-entrypoint"] }

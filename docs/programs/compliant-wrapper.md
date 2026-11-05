@@ -124,7 +124,7 @@ Updates the fee basis points. Authority only.
 
 ### `update_kyc_registry`
 
-Points the wrapper at a different transfer-hook KYC registry. Authority only. The new registry account must be owned by the transfer-hook program.
+Points the wrapper at a different transfer-hook KYC registry. Authority only. The new account must be owned by the transfer-hook program and be a `KycRegistry` whose `mint` is the wrapper's `wrapped_mint` (`InvalidKycRegistry` otherwise). `initialize_wrapper` cannot check this because the wrapped mint (and so its registry) does not exist yet; call `update_kyc_registry` once the registry is created.
 
 **Accounts:** `authority` (signer), `wrapper_config` (writable), `new_kyc_registry`.
 
@@ -152,6 +152,7 @@ Points the wrapper at a different transfer-hook KYC registry. Authority only. Th
 | 6005 | KycNotActive | KYC entry is not active |
 | 6006 | AmountTooSmall | Amount is too small |
 | 6007 | Overflow | Arithmetic overflow |
+| 6008 | InvalidKycRegistry | Account is not the transfer-hook KYC registry of the wrapped mint |
 
 ## KYC Verification
 

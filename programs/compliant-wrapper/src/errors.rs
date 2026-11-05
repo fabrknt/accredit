@@ -25,4 +25,7 @@ pub enum WrapperError {
 
     #[msg("Arithmetic overflow")]
     Overflow,
+
+    #[msg("Account is not the transfer-hook KYC registry of the wrapped mint")]
+    InvalidKycRegistry,
 }
