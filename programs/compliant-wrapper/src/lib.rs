@@ -435,7 +435,11 @@ pub struct Wrap<'info> {
     pub user_underlying_account: InterfaceAccount<'info, TokenAccount>,
 
     /// User's wrapped token account (destination for minted wrapped tokens)
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = wrapped_mint,
+        token::authority = user,
+    )]
     pub user_wrapped_account: InterfaceAccount<'info, TokenAccount>,
 
     /// WhitelistEntry PDA from the transfer-hook program.
@@ -484,7 +488,11 @@ pub struct Unwrap<'info> {
     pub vault: InterfaceAccount<'info, TokenAccount>,
 
     /// User's underlying token account (destination for released tokens)
-    #[account(mut)]
+    #[account(
+        mut,
+        token::mint = wrapper_config.underlying_mint,
+        token::authority = user,
+    )]
     pub user_underlying_account: InterfaceAccount<'info, TokenAccount>,
 
     /// User's wrapped token account (source of burned tokens)
