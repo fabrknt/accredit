@@ -122,10 +122,12 @@ Update KYC level, jurisdiction, and expiry for an existing whitelist entry.
 
 Set up the Token-2022 extra account meta list for automatic transfer hook resolution. This must be called once per mint before the hook can process transfers.
 
-The meta list resolves three additional accounts for each transfer:
+The meta list resolves five additional accounts for each transfer:
 1. **KycRegistry** — derived from mint
-2. **Sender WhitelistEntry** — derived from source token account (writable, for volume tracking)
-3. **Recipient WhitelistEntry** — derived from destination token account
+2. **Sender WhitelistEntry** — `["whitelist", owner]`, where owner is the wallet stored in the source token account (bytes 32..64)
+3. **Recipient WhitelistEntry** — `["whitelist", owner]` of the destination token account
+4. **Sender BlacklistEntry** — `["blacklist", owner]` of the source token account (may be an empty account)
+5. **Recipient BlacklistEntry** — `["blacklist", owner]` of the destination token account (may be an empty account)
 
 **Accounts:**
 
@@ -142,13 +144,15 @@ Main transfer hook entry point. Called automatically by Token-2022 on every tran
 
 **Validation order:**
 1. Registry is active
-2. Sender is whitelisted and not expired
-3. Sender jurisdiction is allowed
-4. Sender daily volume limit not exceeded
-5. Transfer amount within sender's per-level limit
-6. Recipient is whitelisted and not expired
-7. Recipient jurisdiction is allowed
-8. Transfer amount within recipient's per-level limit
+2. Neither owner wallet has an active BlacklistEntry of this registry
+3. Both WhitelistEntry accounts belong to this registry and to the token accounts' owner wallets
+4. Sender is whitelisted and not expired
+5. Sender jurisdiction is allowed
+6. Sender daily volume limit not exceeded
+7. Transfer amount within sender's per-level limit
+8. Recipient is whitelisted and not expired
+9. Recipient jurisdiction is allowed
+10. Transfer amount within recipient's per-level limit
 
 **Accounts:**
 
@@ -160,8 +164,10 @@ Main transfer hook entry point. Called automatically by Token-2022 on every tran
 | `owner` | No | No | Token owner |
 | `extra_account_meta_list` | No | No | Meta list |
 | `registry` | No | No | KycRegistry PDA |
-| `sender_whitelist` | No | No | Sender's WhitelistEntry PDA |
-| `recipient_whitelist` | No | No | Recipient's WhitelistEntry PDA |
+| `sender_whitelist` | No | No | WhitelistEntry PDA of the source owner wallet |
+| `recipient_whitelist` | No | No | WhitelistEntry PDA of the destination owner wallet |
+| `sender_blacklist` | No | No | BlacklistEntry PDA of the source owner wallet (may be empty) |
+| `recipient_blacklist` | No | No | BlacklistEntry PDA of the destination owner wallet (may be empty) |
 
 ### `pause_registry`
 
