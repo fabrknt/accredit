@@ -280,8 +280,8 @@ export interface MyProjectSpecificType { ... }
 
 To attach the transfer hook to a new token mint:
 
-1. Create the mint with the transfer-hook extension pointing to `4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf`
-2. Call `initialize_registry` with the mint, signed by the mint authority, to create the KYC registry
+1. Create the mint with the transfer-hook extension pointing to `5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL`
+2. Call `initialize_registry(admin)` with the mint to create the KYC registry, signed by the mint authority (or by the transfer-hook upgrade authority with `program_data`, when the mint authority is a program PDA). `admin` becomes the registry authority
 3. Call `initialize_extra_account_meta_list` with the mint to enable hook resolution
 4. Call `add_to_whitelist` for each verified wallet
 
@@ -297,3 +297,5 @@ After setup, every `transfer_checked` on the mint will automatically invoke the 
 | Sovereign | `2UAZc1jj4QTSkgrC8U9d4a7EM9AQunxMvW5g7rX7Af9T` |
 
 These are the same on localnet and devnet. Mainnet program IDs will be published when deployed.
+
+Note: `Anchor.toml` still lists `4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf` for `transfer_hook` under `[programs.devnet]`, which does not match the program's `declare_id!` (`5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL`). Use the `declare_id!` value.

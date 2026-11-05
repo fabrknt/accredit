@@ -138,7 +138,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { KycClient, KycLevel } from '@fabrknt/accredit-sdk';
 
 const connection = new Connection('https://api.devnet.solana.com');
-const programId = new PublicKey('4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf');
+const programId = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
 
 const client = new KycClient(connection, programId);
 

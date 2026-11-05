@@ -225,6 +225,8 @@ impl Env {
 }
 
 fn initialize_registry_ix(authority: &Pubkey, mint: &Pubkey) -> Instruction {
+    let mut data = anchor_disc("initialize_registry").to_vec();
+    data.extend_from_slice(authority.as_ref()); // admin = signer
     Instruction {
         program_id: HOOK,
         accounts: vec![
@@ -235,7 +237,7 @@ fn initialize_registry_ix(authority: &Pubkey, mint: &Pubkey) -> Instruction {
             AccountMeta::new_readonly(HOOK, false),
             AccountMeta::new_readonly(SYSTEM, false),
         ],
-        data: anchor_disc("initialize_registry").to_vec(),
+        data,
     }
 }
 

@@ -53,16 +53,22 @@ One entry per wallet. Stores the wallet's KYC status, jurisdiction, and transfer
 
 Create a KYC registry for a token mint. Sets `require_kyc` and `verified_only` to `true` by default.
 
-The `authority` must be the mint's mint authority. If the mint has no mint authority, the `authority` must be this program's upgrade authority and `program_data` must be passed.
+The signer (`authority`) must be either the mint's mint authority or this program's upgrade authority. The upgrade-authority path, which needs `program_data`, is for mints whose mint authority is a PDA of another program (for example a stablecoin or wrapper config PDA) or that have no mint authority. The `admin` argument becomes the registry authority, which manages the whitelist and blacklist; it can be a wallet or a multisig and does not have to be the signer.
+
+**Arguments:**
+
+| Argument | Type | Description |
+|----------|------|-------------|
+| `admin` | `Pubkey` | Registry authority stored in `KycRegistry.authority` |
 
 **Accounts:**
 
 | Account | Signer | Writable | Description |
 |---------|--------|----------|-------------|
-| `authority` | Yes | Yes | Mint authority of `mint` (becomes the registry admin, pays rent) |
+| `authority` | Yes | Yes | Mint authority of `mint`, or this program's upgrade authority (pays rent) |
 | `mint` | No | No | Token-2022 mint |
 | `registry` | No | Yes | KycRegistry PDA (initialized) |
-| `program_data` | No | No | Optional. This program's ProgramData account; required only when `mint` has no mint authority |
+| `program_data` | No | No | Optional. This program's ProgramData account; required when `authority` is not the mint authority. Pass the program id to omit it |
 | `system_program` | No | No | System program |
 
 ### `add_to_whitelist`

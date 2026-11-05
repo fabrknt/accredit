@@ -94,36 +94,37 @@ pub mod transfer_hook {
 
     /// Initialize the KYC registry for a specific mint.
     ///
-    /// The signer must be the mint's mint authority. For a mint without a
-    /// mint authority (fixed supply), the signer must instead be this
-    /// program's upgrade authority, shown by passing its ProgramData account.
-    pub fn initialize_registry(ctx: Context<InitializeRegistry>) -> Result<()> {
+    /// The signer must be either the mint's mint authority or this program's
+    /// upgrade authority (shown by passing its ProgramData account). The
+    /// second path covers mints whose mint authority is a PDA of another
+    /// program, or that have no mint authority. `admin` becomes the registry
+    /// authority that manages the whitelist and blacklist.
+    pub fn initialize_registry(ctx: Context<InitializeRegistry>, admin: Pubkey) -> Result<()> {
         let clock = Clock::get()?;
         let signer = ctx.accounts.authority.key();
-        match ctx.accounts.mint.mint_authority {
-            anchor_lang::solana_program::program_option::COption::Some(mint_authority) => {
-                require_keys_eq!(mint_authority, signer, TransferHookError::Unauthorized);
-            }
-            anchor_lang::solana_program::program_option::COption::None => {
-                let program_data = ctx
-                    .accounts
-                    .program_data
-                    .as_ref()
-                    .ok_or(TransferHookError::Unauthorized)?;
-                let (expected, _) = Pubkey::find_program_address(
-                    &[crate::ID.as_ref()],
-                    &anchor_lang::solana_program::bpf_loader_upgradeable::ID,
-                );
-                require_keys_eq!(program_data.key(), expected, TransferHookError::Unauthorized);
-                require!(
-                    program_data.upgrade_authority_address == Some(signer),
-                    TransferHookError::Unauthorized
-                );
-            }
+        let is_mint_authority = matches!(
+            ctx.accounts.mint.mint_authority,
+            anchor_lang::solana_program::program_option::COption::Some(a) if a == signer
+        );
+        if !is_mint_authority {
+            let program_data = ctx
+                .accounts
+                .program_data
+                .as_ref()
+                .ok_or(TransferHookError::Unauthorized)?;
+            let (expected, _) = Pubkey::find_program_address(
+                &[crate::ID.as_ref()],
+                &anchor_lang::solana_program::bpf_loader_upgradeable::ID,
+            );
+            require_keys_eq!(program_data.key(), expected, TransferHookError::Unauthorized);
+            require!(
+                program_data.upgrade_authority_address == Some(signer),
+                TransferHookError::Unauthorized
+            );
         }
         let registry = &mut ctx.accounts.registry;
 
-        registry.authority = ctx.accounts.authority.key();
+        registry.authority = admin;
         registry.mint = ctx.accounts.mint.key();
         registry.whitelist_count = 0;
         registry.is_active = true;
@@ -135,7 +136,7 @@ pub mod transfer_hook {
 
         emit!(RegistryInitialized {
             mint: ctx.accounts.mint.key(),
-            authority: ctx.accounts.authority.key(),
+            authority: admin,
             timestamp: clock.unix_timestamp,
         });
 
@@ -578,7 +579,7 @@ pub struct InitializeRegistry<'info> {
     pub registry: Account<'info, KycRegistry>,
 
     /// This program's ProgramData account. Only needed (and only read) when
-    /// the mint has no mint authority.
+    /// the signer is not the mint authority.
     pub program_data: Option<Account<'info, ProgramData>>,
 
     pub system_program: Program<'info, System>,
