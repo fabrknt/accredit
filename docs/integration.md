@@ -167,15 +167,17 @@ cd ../your-project && pnpm install  # or yarn install
 
 ```typescript
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycClient, KycLevel } from '@fabrknt/accredit-sdk';
+import { KycClient, KycLevel, findKycRegistryPda } from '@fabrknt/accredit-sdk';
 
 const connection = new Connection(rpcUrl);
 const hookProgram = new PublicKey('5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL');
 
 const kycClient = new KycClient(connection, hookProgram);
 
-// Check if a wallet can transact
+// Check if a wallet can transact (entries are per registry)
+const [registryPda] = findKycRegistryPda(mint, hookProgram);
 const result = await kycClient.checkCompliance(
+  registryPda,
   walletPubkey,
   KycLevel.Standard,
   0b00101111  // Japan + SG + HK + EU + Other
@@ -283,9 +285,11 @@ To attach the transfer hook to a new token mint:
 1. Create the mint with the transfer-hook extension pointing to `5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL`
 2. Call `initialize_registry(admin)` with the mint to create the KYC registry, signed by the mint authority (or by the transfer-hook upgrade authority with `program_data`, when the mint authority is a program PDA). `admin` becomes the registry authority
 3. Call `initialize_extra_account_meta_list` with the mint to enable hook resolution
-4. Call `add_to_whitelist` for each verified wallet
+4. Call `add_to_whitelist` for each verified wallet, and for each program PDA that will own a token account of the mint (escrow, vault, treasury) with a KYC level whose per-transfer limit covers its amounts
 
-After setup, every `transfer_checked` on the mint will automatically invoke the hook.
+After setup, every `transfer_checked` on the mint invokes the hook. The hook checks the owner wallets of the source and destination token accounts; transfers by the mint's permanent delegate skip the sender-side checks. If your program moves the token by CPI, pass the extra accounts listed in [Transfer Hook › initialize_extra_account_meta_list](programs/transfer-hook.md#initialize_extra_account_meta_list).
+
+Existing deployments: see [Upgrading an existing deployment](programs/transfer-hook.md#upgrading-an-existing-deployment).
 
 ## Program IDs
 

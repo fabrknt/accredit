@@ -7,10 +7,20 @@ Wraps existing SPL tokens into KYC-gated Token-2022 equivalents with transfer ho
 ## How It Works
 
 1. An operator initializes a wrapper for an underlying token (e.g., USDC)
-2. The program creates a Token-2022 wrapped mint (cUSDC) with the transfer hook extension pointing to the transfer-hook program
+2. The wrapped mint (cUSDC) is a Token-2022 mint at the `["wrapped_mint", wrapper_config]` PDA with the transfer hook extension pointing to the transfer-hook program, and `wrapper_config` as its mint authority
 3. KYC-verified users deposit underlying tokens and receive wrapped tokens 1:1 (minus optional fee)
 4. All transfers of wrapped tokens are automatically validated by the transfer hook
 5. Users can unwrap at any time, burning wrapped tokens to receive underlying tokens
+
+**Known limitation:** `initialize_wrapper` records the wrapped mint address and creates the vault, but does not yet create the Token-2022 mint at that address. Until mint creation is added to the program, `wrap` cannot mint.
+
+## Setup order
+
+1. `initialize_wrapper(fee_bps, min_kyc_level)`.
+2. Once the wrapped mint exists: create its transfer-hook registry with `initialize_registry(admin)` on the transfer-hook program. The wrapped mint's authority is the `wrapper_config` PDA, so this is signed by the transfer-hook upgrade authority with `program_data`.
+3. `initialize_extra_account_meta_list` for the wrapped mint on the transfer-hook program.
+4. `update_kyc_registry` on the wrapper with that registry, so wrap/unwrap read entries of the wrapped mint's registry.
+5. The registry authority whitelists users (`add_to_whitelist`) in that registry.
 
 ## Account Structure
 
@@ -51,7 +61,7 @@ Vault (SPL token account holding underlying)
 
 ### `initialize_wrapper`
 
-Creates the wrapper configuration, Token-2022 wrapped mint, and vault.
+Creates the wrapper configuration and the vault, and records the wrapped mint PDA in the config (see the known limitation above).
 
 **Parameters:**
 - `fee_bps: u16` — Fee in basis points (100 = 1%)
@@ -61,9 +71,9 @@ Creates the wrapper configuration, Token-2022 wrapped mint, and vault.
 - `authority` (signer, mut) — Wrapper administrator
 - `underlying_mint` — The existing token mint to wrap
 - `wrapper_config` (init) — WrapperConfig PDA
-- `wrapped_mint` (init) — Token-2022 mint with transfer hook extension
+- `wrapped_mint` (mut) — Wrapped mint PDA `["wrapped_mint", wrapper_config]`; its address is stored, it is not initialized here
 - `vault` (init) — Token account for underlying assets, owned by wrapper_config PDA
-- `kyc_registry` — Transfer-hook KYC registry for the underlying mint
+- `kyc_registry` — Initial value of `WrapperConfig.kyc_registry` (not checked here; set the wrapped mint's registry with `update_kyc_registry`)
 - `token_program`, `token_2022_program`, `associated_token_program`, `system_program`, `rent`
 
 ### `wrap`
@@ -86,9 +96,9 @@ Deposits underlying tokens and mints wrapped tokens to the user.
 - `wrapper_config` (mut) — WrapperConfig PDA
 - `wrapped_mint` (mut) — Token-2022 wrapped mint
 - `vault` (mut) — Underlying token vault
-- `user_underlying_account` (mut) — User's underlying token account
-- `user_wrapped_account` (mut) — User's wrapped token account
-- `whitelist_entry` — User's WhitelistEntry PDA from transfer-hook program
+- `user_underlying_account` (mut) — User's underlying token account (source)
+- `user_wrapped_account` (mut) — User's wrapped token account; must be for `wrapped_mint` and owned by `user`
+- `whitelist_entry` — `["whitelist", wrapper_config.kyc_registry, user]` under the transfer-hook program
 - `token_program`, `token_2022_program`
 
 ### `unwrap`
@@ -105,7 +115,7 @@ Burns wrapped tokens and releases underlying tokens from vault.
 4. Burn wrapped tokens from user (Token-2022 burn)
 5. Transfer `amount - fee` underlying tokens from vault to user (SPL transfer with PDA signer)
 
-**Accounts:** Same as `wrap`.
+**Accounts:** Same as `wrap`, except that `user_underlying_account` (the destination) must be for the underlying mint and owned by `user`, and `user_wrapped_account` is the source of the burn.
 
 ### `pause_wrapper`
 
@@ -160,8 +170,14 @@ The wrapper program reads the WhitelistEntry account directly from the transfer-
 
 | Field | Offset | Size | Check |
 |-------|--------|------|-------|
+| `registry` | 40 | 32 bytes | Must equal `WrapperConfig.kyc_registry` |
 | `is_active` | 106 | 1 byte | Must be `true` |
 | `kyc_level` | 72 | 1 byte | Must be `>= min_kyc_level` |
 | `expiry_timestamp` | 139 | 8 bytes (i64 LE) | Must be `> current_time` (or 0 for no expiry) |
 
-The WhitelistEntry PDA is derived with seeds `["whitelist", user_wallet]` under the transfer-hook program ID.
+The account must be owned by the transfer-hook program and sit at the PDA `["whitelist", wrapper_config.kyc_registry, user_wallet]` under the transfer-hook program ID. The offsets are pinned by unit tests against the transfer-hook `WhitelistEntry` layout.
+
+## Upgrading an existing deployment
+
+- Wrap and unwrap read the WhitelistEntry at `["whitelist", kyc_registry, user]`. Upgrade the wrapper together with the transfer hook, and re-create the users' entries in the wrapped mint's registry (see [Upgrading an existing deployment](transfer-hook.md#upgrading-an-existing-deployment)).
+- If a wrapper was initialized with a `kyc_registry` other than the wrapped mint's registry, the authority sets the right one with `update_kyc_registry`.

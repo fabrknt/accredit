@@ -94,12 +94,15 @@ Chain-specific SDKs (`@fabrknt/accredit-sdk` for Solana) convert between on-chai
 
 Token-2022 transfer hook that validates every token transfer against KYC/AML requirements:
 
-- Wallet whitelist with KYC level, jurisdiction, and expiry
-- Per-wallet daily volume tracking and limits
-- Per-KYC-level transaction size limits
+- Runs as the mint's Token-2022 transfer hook (SPL `Execute` discriminator); it only runs inside a transfer of a mint that uses this hook, so direct calls fail
+- Per-registry whitelist and blacklist (SSS-2), keyed by the owner wallet of each token account: `["whitelist" | "blacklist", registry, wallet]`
+- Whitelist entries with KYC level, jurisdiction, and expiry; removed entries can be reinstated (`reinstate_whitelist` / `reinstate_blacklist`)
+- Sender daily volume limit (`daily_limit`, 0 = unlimited), recorded on every transfer
+- Per-KYC-level transaction size limits on both sender and recipient
 - Jurisdiction restrictions (USA blocked by default)
-- Emergency pause/resume for the registry
-- Authority transfer
+- Mint's permanent delegate skips the sender-side checks (seizure); the recipient is still checked
+- Registry created by the mint authority, or by the program's upgrade authority for mints whose authority is a program PDA
+- Emergency pause/resume for the registry, authority transfer, `update_extra_account_meta_list` for existing mints
 
 See [docs/programs/transfer-hook.md](docs/programs/transfer-hook.md) for full reference.
 
@@ -119,8 +122,8 @@ See [docs/programs/compliant-registry.md](docs/programs/compliant-registry.md) f
 Wraps existing SPL tokens into KYC-gated Token-2022 equivalents:
 
 - 1:1 backed wrapping (deposit USDC, receive cUSDC)
-- Wrapped mint uses Token-2022 with transfer hook extension for automatic compliance
-- KYC verification required for wrap/unwrap (reads WhitelistEntry from transfer-hook program)
+- Wrapped mint uses Token-2022 with transfer hook extension for automatic compliance (the program does not create the wrapped mint yet; see the wrapper docs)
+- KYC verification required for wrap/unwrap (reads the user's WhitelistEntry in the wrapper's KYC registry, which the authority sets with `update_kyc_registry`)
 - Configurable fee (basis points) and minimum KYC level
 - Emergency pause/resume for the wrapper
 - Per-wrapper vault holding underlying assets
@@ -137,14 +140,14 @@ Universal identity and multi-dimensional reputation protocol:
 - **Admission Market extension** — Marketplace for identity and access credentials
 - On-chain identity aggregation linked to KYC and compliance state
 
-See [docs/programs/sovereign.md](docs/programs/sovereign.md) for full reference.
+See [docs/sovereign-integration.md](docs/sovereign-integration.md) and [docs/sovereign-sdk.md](docs/sovereign-sdk.md) for full reference.
 
 ## TypeScript Packages
 
 | Package | Description | Chain |
 |---------|-------------|-------|
 | `@fabrknt/accredit-core` | Shared type definitions (enums, interfaces, constants) | Agnostic |
-| `@fabrknt/accredit-sdk` | PDA derivation, `KycClient`, `RegistryClient`, `WrapperClient` | Solana |
+| `@fabrknt/accredit-sdk` (2.0.0) | PDA derivation, `KycClient`, `BlacklistClient`, `RegistryClient`, `WrapperClient` (entries keyed by registry) | Solana |
 | `@fabrknt/accredit-router` | `ComplianceAwareRouter`, Jupiter integration, ZK proofs | Solana |
 | `@fabrknt/accredit-kyc-providers` | Multi-provider KYC integration (Civic, Worldcoin) | Agnostic |
 | `sovereign-sdk` | Sovereign identity SDK | Solana |
@@ -184,6 +187,8 @@ The `qn-addon` package (`fabrknt-onchain-compliance`) exposes compliance and ide
 - Route compliance
 - ZK proof inputs
 - Wrapper config and supply reads
+
+KYC reads use the entries of one transfer-hook registry, which the operator sets with the `KYC_REGISTRY` environment variable.
 
 **Plans:**
 
@@ -225,7 +230,13 @@ anchor test
 
 # Run TypeScript package tests
 pnpm test
+
+# Run real Token-2022 transfer_checked calls through the hook in LiteSVM
+cargo build-sbf --manifest-path programs/transfer-hook/Cargo.toml
+cargo test --manifest-path tests-litesvm/Cargo.toml
 ```
+
+`tests-litesvm` is a standalone Cargo workspace with its own lockfile. It loads `target/deploy/transfer_hook.so`, so build the program first.
 
 ### Using as a Dependency
 
@@ -256,6 +267,17 @@ Then in your `package.json`:
 
 See [docs/integration.md](docs/integration.md) for detailed integration instructions.
 
+## Upgrading an existing deployment
+
+Whitelist and blacklist entries live at `["whitelist" | "blacklist", registry, wallet]`. When moving an existing deployment to this version:
+
+1. Re-create the entries at these addresses for each registry, blacklist entries first, then whitelist entries.
+2. Run `update_extra_account_meta_list` for each mint (registry authority), so Token-2022 resolves the new addresses.
+3. Upgrade the transfer hook, the compliant wrapper and every consumer (programs that read entries, `@fabrknt/accredit-sdk` 2.0.0, CPI callers) together.
+4. Program PDAs that receive the token (escrows, vaults, treasuries) need their own whitelist entries, with a KYC level high enough for the amounts they move.
+
+Details: [Transfer Hook › Upgrading an existing deployment](docs/programs/transfer-hook.md#upgrading-an-existing-deployment).
+
 ## KYC Levels
 
 | Level | Description | Per-Transaction Limit |
@@ -264,6 +286,8 @@ See [docs/integration.md](docs/integration.md) for detailed integration instruct
 | Standard | Government ID document | 10,000,000 JPY |
 | Enhanced | Video call + address proof | 100,000,000 JPY |
 | Institutional | Corporate KYC/KYB | Unlimited |
+
+The per-transaction limit applies to both the sender's and the recipient's level (6-decimal base units).
 
 ## Jurisdictions
 
@@ -300,4 +324,4 @@ See [docs/integration.md](docs/integration.md) for detailed integration instruct
 
 ## License
 
-MIT
+Apache-2.0 (see [LICENSE](LICENSE))

@@ -398,13 +398,24 @@ pub mod transfer_hook {
         Ok(())
     }
 
-    /// Execute transfer hook - validates KYC/AML compliance
-    /// Called automatically by Token-2022 on every transfer
+    /// Execute transfer hook - validates KYC/AML compliance.
+    /// Called by Token-2022 on every transfer of a mint that uses this hook;
+    /// calling it directly fails with `NotTransferring`.
     ///
     /// Validation order:
-    /// 1. Registry active check
-    /// 2. Blacklist check (SSS-2) — reject if either party is blacklisted
-    /// 3. Whitelist check — verify KYC status, jurisdiction, limits
+    /// 1. The mint's TransferHook extension points at this program, and both
+    ///    token accounts have `transferring` set
+    /// 2. Registry is active
+    /// 3. Blacklist (SSS-2): neither owner wallet has an active entry in
+    ///    this registry (sender side skipped for the permanent delegate)
+    /// 4. Sender whitelist: entry of this registry and the source owner,
+    ///    active and not expired, jurisdiction allowed, daily limit
+    ///    (0 = unlimited), per-KYC-level limit (skipped for the permanent
+    ///    delegate)
+    /// 5. Recipient whitelist: entry of this registry and the destination
+    ///    owner, active and not expired, jurisdiction allowed, per-KYC-level
+    ///    limit
+    /// 6. The amount is added to the sender entry's daily volume
     ///
     /// Uses the SPL transfer-hook `Execute` discriminator so Token-2022's
     /// hook call is dispatched here.

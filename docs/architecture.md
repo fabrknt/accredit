@@ -73,7 +73,7 @@ WhitelistEntry (per registry and wallet)
   ├── jurisdiction: Jurisdiction
   ├── kyc_hash: [u8; 32]
   ├── is_active: bool
-  ├── daily_limit: u64        (0 = use per-level default)
+  ├── daily_limit: u64        (sender-side, 0 = unlimited)
   ├── daily_volume: u64
   ├── volume_reset_time: i64
   ├── verified_at: i64
@@ -82,9 +82,21 @@ WhitelistEntry (per registry and wallet)
   ├── created_at: i64
   └── bump: u8
 
+BlacklistEntry (per registry and wallet, SSS-2)
+  PDA: ["blacklist", registry, wallet]
+  ├── wallet: Pubkey
+  ├── registry: Pubkey
+  ├── reason: String          (max 64 bytes)
+  ├── is_active: bool
+  ├── added_by: Pubkey
+  ├── added_at: i64
+  ├── removed_at: i64
+  └── bump: u8
+
 ExtraAccountMetaList (per mint)
   PDA: ["extra-account-metas", mint]
-  └── Resolves KycRegistry + sender/recipient WhitelistEntry for Token-2022
+  └── Resolves KycRegistry + sender/recipient WhitelistEntry and
+      BlacklistEntry for Token-2022 (order in docs/programs/transfer-hook.md)
 ```
 
 ### Compliant Registry Program
@@ -170,7 +182,7 @@ All PDAs use deterministic seeds. The TypeScript SDK provides helper functions t
 | Wrapped Mint | `["wrapped_mint", wrapper_config]` | compliant-wrapper |
 | Wrapper Vault | `["wrapper_vault", wrapper_config]` | compliant-wrapper |
 
-The whitelist PDA uses wallet as the sole seed (not registry + wallet). This means each wallet has exactly one global whitelist entry, simplifying lookups and enabling the transfer hook to resolve entries without knowing which registry the wallet belongs to.
+Whitelist and blacklist entries are scoped to a registry: `wallet` is the owner of a token account, and each mint's registry keeps its own entries. The transfer hook resolves them from the mint (registry) and the owner field of the source and destination token accounts. A program PDA that owns a token account (escrow, vault, treasury) needs its own entry.
 
 ## Transfer Flow
 
@@ -181,12 +193,18 @@ When a Token-2022 transfer occurs on a mint with the transfer hook enabled:
    │
 2. Token-2022 resolves ExtraAccountMetaList
    │  → Derives KycRegistry PDA from mint
-   │  → Derives sender WhitelistEntry PDA from source token account
-   │  → Derives recipient WhitelistEntry PDA from destination token account
+   │  → Derives sender WhitelistEntry / BlacklistEntry PDAs from the
+   │    source token account's owner
+   │  → Derives recipient WhitelistEntry / BlacklistEntry PDAs from the
+   │    destination token account's owner
    │
-3. Transfer hook `execute` runs
+3. Token-2022 calls the hook's `execute` (SPL Execute discriminator)
    │
+   ├─ Mint uses this hook?        → HookProgramMismatch error
+   ├─ Called mid-transfer?        → NotTransferring error
    ├─ Registry active?            → RegistryInactive error
+   ├─ Sender blacklisted?         → SenderBlacklisted error
+   ├─ Recipient blacklisted?      → RecipientBlacklisted error
    ├─ Sender whitelisted + valid? → SenderNotWhitelisted error
    ├─ Sender jurisdiction OK?     → JurisdictionNotAllowed error
    ├─ Sender daily limit OK?      → DailyLimitExceeded error
@@ -195,8 +213,10 @@ When a Token-2022 transfer occurs on a mint with the transfer hook enabled:
    ├─ Recipient jurisdiction OK?  → JurisdictionNotAllowed error
    └─ Recipient per-level limit?  → TransferExceedsLimit error
    │
-4. Transfer completes, TransferValidated event emitted
+4. Sender daily volume recorded, TransferValidated event emitted
 ```
+
+When the transfer authority is the mint's permanent delegate (e.g. an SSS-2 seize), the sender-side checks are skipped and `DelegateTransferValidated` is emitted; the recipient checks still apply.
 
 ## Compliant Routing Flow
 
@@ -248,8 +268,9 @@ When a user wraps an existing token (e.g., USDC) into a compliant equivalent (cU
 1. User calls `wrap(amount)` on compliant-wrapper
    │
 2. Verify KYC
-   │  → Read WhitelistEntry PDA from transfer-hook program
-   │  → Check: is_active, kyc_level >= min_kyc_level, not expired
+   │  → Read the user's WhitelistEntry PDA ["whitelist", kyc_registry, user]
+   │    from the transfer-hook program (kyc_registry = WrapperConfig.kyc_registry)
+   │  → Check: registry, is_active, kyc_level >= min_kyc_level, not expired
    │
 3. Calculate fee
    │  → fee = amount * fee_bps / 10000

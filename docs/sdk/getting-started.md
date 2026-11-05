@@ -83,6 +83,8 @@ isJurisdictionAllowed(Jurisdiction.Usa);    // false
 
 Core SDK for interacting with on-chain Accredit accounts. Provides PDA derivation, account deserialization, and compliance checking.
 
+Version 2.0.0: whitelist and blacklist entries are keyed by registry. `findWhitelistEntryPda` / `findBlacklistEntryPda` take `(registry, wallet, programId)`, and `KycClient` / `BlacklistClient` methods take `(registry, wallet)`, where `registry` is the KycRegistry PDA of the mint (`findKycRegistryPda(mint, programId)`).
+
 ### Installation
 
 ```json
@@ -99,6 +101,7 @@ Core SDK for interacting with on-chain Accredit accounts. Provides PDA derivatio
 import {
   findKycRegistryPda,
   findWhitelistEntryPda,
+  findBlacklistEntryPda,
   findExtraAccountMetaListPda,
   findPoolRegistryPda,
   findPoolEntryPda,
@@ -116,6 +119,7 @@ const WRAPPER_PROGRAM = new PublicKey('CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDn
 // Core layer PDAs
 const [registryPda, registryBump] = findKycRegistryPda(mint, TRANSFER_HOOK_PROGRAM);
 const [entryPda, entryBump] = findWhitelistEntryPda(registryPda, wallet, TRANSFER_HOOK_PROGRAM);
+const [blacklistPda] = findBlacklistEntryPda(registryPda, wallet, TRANSFER_HOOK_PROGRAM);
 const [metasPda, metasBump] = findExtraAccountMetaListPda(mint, TRANSFER_HOOK_PROGRAM);
 
 // Routing layer PDAs
@@ -179,9 +183,25 @@ if (result.isCompliant) {
 }
 
 // Clear cache when needed
-client.clearCache();          // clear all
-client.clearCache(wallet);    // clear specific wallet
+client.clearCache();                      // clear all
+client.clearCache(registryPda, wallet);   // clear one entry
 ```
+
+### BlacklistClient
+
+Reads transfer-hook BlacklistEntry accounts (SSS-2).
+
+```typescript
+import { BlacklistClient } from '@fabrknt/accredit-sdk';
+
+const blacklist = new BlacklistClient(connection, programId);
+
+const { blacklisted, reason } = await blacklist.isBlacklisted(registryPda, wallet);
+const entry = await blacklist.getBlacklistEntry(registryPda, wallet); // null if never blacklisted
+blacklist.clearCache(registryPda, wallet);
+```
+
+`isBlacklisted` returns `false` for a wallet with no entry or an inactive (removed) entry.
 
 ### RegistryClient
 
@@ -251,6 +271,7 @@ import {
 import type {
   WhitelistEntry,
   KycRegistry,
+  BlacklistEntry,
   PoolComplianceEntry,
   WrapperConfig,
 } from '@fabrknt/accredit-sdk';

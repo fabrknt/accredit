@@ -36,7 +36,7 @@ One entry per wallet. Stores the wallet's KYC status, jurisdiction, and transfer
 | `jurisdiction` | `Jurisdiction` | Japan / Singapore / HongKong / Eu / Usa / Other |
 | `kyc_hash` | `[u8; 32]` | Encrypted KYC data hash |
 | `is_active` | `bool` | Whether the entry is active |
-| `daily_limit` | `u64` | Per-day transfer limit (0 = use per-level default) |
+| `daily_limit` | `u64` | Per-day limit on what this wallet sends (0 = unlimited) |
 | `daily_volume` | `u64` | Accumulated volume since last reset |
 | `volume_reset_time` | `i64` | When daily volume was last reset |
 | `verified_at` | `i64` | When KYC was last verified |
@@ -46,6 +46,34 @@ One entry per wallet. Stores the wallet's KYC status, jurisdiction, and transfer
 | `bump` | `u8` | PDA bump seed |
 
 **PDA seeds:** `["whitelist", registry, wallet]` — an entry belongs to one registry, so each registry creates its own entries.
+
+`wallet` is the owner of a token account, not the token account itself. The hook looks entries up by the owner stored in the source and destination token accounts.
+
+### BlacklistEntry
+
+One entry per registry and wallet (SSS-2). While `is_active` is true, the wallet can neither send nor receive the registry's token.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `wallet` | `Pubkey` | Blocked wallet |
+| `registry` | `Pubkey` | Associated KycRegistry |
+| `reason` | `String` | Reason, at most 64 bytes |
+| `is_active` | `bool` | Whether the entry blocks transfers |
+| `added_by` | `Pubkey` | Authority that added (or reinstated) the entry |
+| `added_at` | `i64` | Unix timestamp |
+| `removed_at` | `i64` | When removed (0 while active) |
+| `bump` | `u8` | PDA bump seed |
+
+**PDA seeds:** `["blacklist", registry, wallet]`
+
+## Roles
+
+| Role | Who | Can |
+|------|-----|-----|
+| Mint authority / upgrade authority | Mint authority of the mint, or this program's upgrade authority | Create the mint's registry (`initialize_registry`) and name its admin |
+| Registry authority (`KycRegistry.authority`) | The `admin` given at registry creation | Manage whitelist and blacklist entries, pause/resume, hand over authority, run `update_extra_account_meta_list` |
+| Permanent delegate | The mint's PermanentDelegate, if set | Move tokens without the sender-side checks (see `execute`) |
+| Anyone | Any payer | `initialize_extra_account_meta_list` (the list content is fixed by the program) |
 
 ## Instructions
 
@@ -92,12 +120,12 @@ Add a wallet to the whitelist with full KYC parameters.
 | `kyc_level` | `KycLevel` | Verification level |
 | `jurisdiction` | `Jurisdiction` | Wallet holder's jurisdiction |
 | `kyc_hash` | `[u8; 32]` | Encrypted identity hash |
-| `daily_limit` | `u64` | Custom daily limit (0 = per-level default) |
+| `daily_limit` | `u64` | Daily sending limit (0 = unlimited) |
 | `expiry_timestamp` | `i64` | KYC expiry (0 = never) |
 
 ### `remove_from_whitelist`
 
-Deactivate a wallet's whitelist entry (sets `is_active = false`). Does not close the account.
+Deactivate a wallet's whitelist entry (sets `is_active = false`). Does not close the account; use `reinstate_whitelist` to re-activate it. The entry must be active (`EntryNotActive` otherwise).
 
 **Accounts:**
 
@@ -110,6 +138,25 @@ Deactivate a wallet's whitelist entry (sets `is_active = false`). Does not close
 ### `reinstate_whitelist`
 
 Re-activate a removed entry (`is_active == false`) with fresh parameters: `kyc_level`, `jurisdiction`, `kyc_hash`, `daily_limit`, `expiry_timestamp`. Resets the daily volume and `verified_at`, and counts the wallet again in `whitelist_count`. Fails with `EntryAlreadyActive` on an active entry. Same accounts as `remove_from_whitelist`.
+
+### `add_to_blacklist`
+
+Block a wallet for this registry (SSS-2). Creates the BlacklistEntry PDA.
+
+**Parameters (`AddToBlacklistParams`):** `wallet: Pubkey`, `reason: String` (at most 64 bytes, `ReasonTooLong` otherwise).
+
+**Accounts:**
+
+| Account | Signer | Writable | Description |
+|---------|--------|----------|-------------|
+| `authority` | Yes | Yes | Registry authority (pays rent) |
+| `registry` | No | Yes | KycRegistry PDA |
+| `blacklist_entry` | No | Yes | BlacklistEntry PDA (initialized) |
+| `system_program` | No | No | System program |
+
+### `remove_from_blacklist`
+
+Deactivate a blacklist entry (sets `is_active = false`, records `removed_at`). The entry must be active (`NotBlacklisted` otherwise). Accounts: `authority` (signer), `registry` (writable), `blacklist_entry` (writable).
 
 ### `reinstate_blacklist`
 
@@ -137,14 +184,24 @@ Update KYC level, jurisdiction, and expiry for an existing whitelist entry.
 
 ### `initialize_extra_account_meta_list`
 
-Set up the Token-2022 extra account meta list for automatic transfer hook resolution. This must be called once per mint before the hook can process transfers.
+Set up the Token-2022 extra account meta list for automatic transfer hook resolution. This must be called once per mint before the hook can process transfers. Any payer can call it; the list content is fixed by the program.
 
-The meta list resolves five additional accounts for each transfer:
-1. **KycRegistry** — derived from mint
-2. **Sender WhitelistEntry** — `["whitelist", registry, owner]`, where owner is the wallet stored in the source token account (bytes 32..64)
-3. **Recipient WhitelistEntry** — `["whitelist", registry, owner]` of the destination token account
-4. **Sender BlacklistEntry** — `["blacklist", registry, owner]` of the source token account (may be an empty account)
-5. **Recipient BlacklistEntry** — `["blacklist", registry, owner]` of the destination token account (may be an empty account)
+The full account list Token-2022 passes to `execute`, in order:
+
+| Index | Account | Source | Writable |
+|-------|---------|--------|----------|
+| 0 | Source token account | Standard execute account | No |
+| 1 | Mint | Standard execute account | No |
+| 2 | Destination token account | Standard execute account | No |
+| 3 | Owner (transfer authority: owner, delegate or permanent delegate) | Standard execute account | No |
+| 4 | ExtraAccountMetaList | Standard execute account | No |
+| 5 | KycRegistry | `["kyc_registry", mint]` | No |
+| 6 | Sender WhitelistEntry | `["whitelist", registry, source owner]` | Yes (daily volume) |
+| 7 | Recipient WhitelistEntry | `["whitelist", registry, destination owner]` | No |
+| 8 | Sender BlacklistEntry | `["blacklist", registry, source owner]` (may be empty) | No |
+| 9 | Recipient BlacklistEntry | `["blacklist", registry, destination owner]` (may be empty) | No |
+
+"Owner" is the wallet stored at bytes 32..64 of the token account (`Seed::AccountData`), and `registry` is account 5 (`Seed::AccountKey { index: 5 }`). A `transfer_checked` on this mint must carry accounts 5..9, the hook program id and the meta list account after its standard accounts. `@solana/spl-token`'s `createTransferCheckedWithTransferHookInstruction` resolves them from the meta list; a program that CPIs into Token-2022 has to pass them through.
 
 **Accounts:**
 
@@ -157,7 +214,7 @@ The meta list resolves five additional accounts for each transfer:
 
 ### `update_extra_account_meta_list`
 
-Rewrite an existing mint's meta list to the current list above (for mints whose list was created before the entry seeds included the registry). Signed by the registry authority; accounts: `authority` (signer), `mint`, `registry`, `extra_account_meta_list` (writable).
+Rewrite an existing mint's meta list to the current list above (for mints whose list was created before the entry seeds included the registry). Signed by the registry authority; accounts: `authority` (signer), `mint`, `registry`, `extra_account_meta_list` (writable). The list keeps its size (five extra accounts); a list of another size fails with `InvalidExtraAccountMetaList`.
 
 ### `execute`
 
@@ -225,6 +282,9 @@ Transfer registry authority to a new public key.
 | `WalletRemoved` | wallet, timestamp | Wallet deactivated |
 | `KycLevelUpdated` | wallet, old_level, new_level, jurisdiction, new_expiry, timestamp | KYC level changed |
 | `TransferValidated` | sender, recipient, amount, sender_kyc_level, recipient_kyc_level, timestamp | Transfer passed compliance |
+| `DelegateTransferValidated` | sender, recipient, delegate, amount, recipient_kyc_level, timestamp | Transfer by the permanent delegate passed the recipient checks |
+| `WalletBlacklisted` | wallet, reason, added_by, timestamp | Blacklist entry added or reinstated |
+| `WalletUnblacklisted` | wallet, removed_by, timestamp | Blacklist entry removed |
 | `RegistryPaused` | mint, paused_by, timestamp | Registry paused |
 | `RegistryResumed` | mint, resumed_by, timestamp | Registry resumed |
 | `RegistryAuthorityUpdated` | mint, old_authority, new_authority, timestamp | Authority changed |
@@ -242,8 +302,20 @@ Transfer registry authority to a new public key.
 | `JurisdictionNotAllowed` | Sender or recipient is in a restricted jurisdiction |
 | `TransferNotAllowed` | Generic transfer denial |
 | `TransferExceedsLimit` | Amount exceeds per-KYC-level transaction limit |
-| `InvalidWhitelistEntry` | Whitelist entry is malformed |
+| `InvalidWhitelistEntry` | Whitelist entry does not belong to the token account's owner wallet |
+| `SenderBlacklisted` | Sender wallet has an active blacklist entry |
+| `RecipientBlacklisted` | Recipient wallet has an active blacklist entry |
+| `AlreadyBlacklisted` | `reinstate_blacklist` on an active entry |
+| `NotBlacklisted` | `remove_from_blacklist` on an inactive entry |
 | `Overflow` | Arithmetic overflow in volume calculation |
+| `InvalidExtraAccountMetaList` | Meta list account has an unexpected size |
+| `EntryAlreadyActive` | `reinstate_whitelist` on an active entry |
+| `ReasonTooLong` | Blacklist reason is longer than 64 bytes |
+| `NotTransferring` | `execute` was called outside a Token-2022 transfer |
+| `HookProgramMismatch` | The mint's TransferHook extension does not point at this program |
+| `EntryNotActive` | `remove_from_whitelist` on an inactive entry |
+
+An expired entry fails as `SenderNotWhitelisted` / `RecipientNotWhitelisted`; `KycExpired` and `TransferNotAllowed` are defined but not returned by the current instructions.
 
 ## Trade Limits by KYC Level
 
@@ -254,4 +326,24 @@ Transfer registry authority to a new public key.
 | Enhanced | 100,000,000 JPY (100,000,000,000,000 base units) | Video call + address proof |
 | Institutional | Unlimited (u64::MAX) | Corporate KYC/KYB |
 
-Base units assume 6 decimal places.
+Base units assume 6 decimal places. The per-level limits apply to both the sender and the recipient: a transfer must fit the lower of the two levels. The daily limit (`daily_limit`) applies to the sender only.
+
+## Deploy order for a new mint
+
+1. Create the Token-2022 mint with the TransferHook extension pointing at this program (and PermanentDelegate if you need SSS-2 seizure).
+2. `initialize_registry(admin)`, signed by the mint authority, or by this program's upgrade authority with `program_data` when the mint authority is a program PDA.
+3. `initialize_extra_account_meta_list` for the mint.
+4. `add_to_whitelist` for every wallet that will hold the token, including program-owned PDAs that receive it (see below).
+
+### Program accounts that hold the token
+
+Entries are looked up by the token account's owner. When a program PDA owns a token account (an escrow, vault or treasury), that PDA needs its own WhitelistEntry in the registry, with a KYC level whose per-level limit covers the amounts it will receive and send (`Institutional` has no per-transfer limit), an allowed jurisdiction, and `daily_limit` 0 unless you want to cap its outflow. Without it, transfers into the PDA fail with `AccountNotInitialized` on `recipient_whitelist`.
+
+## Upgrading an existing deployment
+
+The whitelist and blacklist entry addresses are `["whitelist" | "blacklist", registry, wallet]`. Deployments whose entries live at other addresses need the following when they move to this version:
+
+1. **Re-create entries at the new addresses.** For each registry, create the blacklist entries first (`add_to_blacklist`), so that no blocked wallet is transferable in between, then the whitelist entries (`add_to_whitelist`) with their current KYC level, jurisdiction, daily limit and expiry. Entries at other addresses are not read by the hook.
+2. **Run `update_extra_account_meta_list` for each mint**, signed by its registry authority, so Token-2022 resolves the new entry addresses. Mints whose meta list was never created run `initialize_extra_account_meta_list` instead.
+3. **Upgrade the hook, the compliant wrapper and every consumer together.** Programs and clients that derive entry PDAs (the compliant wrapper, programs that read WhitelistEntry, `@fabrknt/accredit-sdk` 2.0.0 users, CPI callers that pass the extra accounts) must use the registry-scoped seeds at the same time.
+4. **Whitelist program PDAs that receive the token** (escrows, vaults, treasuries) with a high enough KYC level, as described above.

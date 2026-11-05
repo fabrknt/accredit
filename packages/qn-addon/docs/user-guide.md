@@ -93,6 +93,8 @@ If the instance is not found or has been deactivated:
 
 These endpoints require the **Pro** plan and read on-chain KYC data through your provisioned Solana RPC endpoint.
 
+Whitelist entries are scoped to a transfer-hook KYC registry (one per token mint). The add-on reads the entries of the registry configured by its operator (`KYC_REGISTRY`), so a wallet's result reflects its status for that token.
+
 #### GET /v1/kyc/:wallet
 
 Read the whitelist entry for a single wallet.
