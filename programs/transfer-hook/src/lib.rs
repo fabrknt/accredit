@@ -77,6 +77,12 @@ pub enum TransferHookError {
 
     #[msg("Blacklist reason is too long")]
     ReasonTooLong,
+
+    #[msg("Execute must be called by Token-2022 during a transfer")]
+    NotTransferring,
+
+    #[msg("Mint does not use this program as its transfer hook")]
+    HookProgramMismatch,
 }
 
 #[program]
@@ -372,6 +378,19 @@ pub mod transfer_hook {
     #[instruction(discriminator = ExecuteInstruction::SPL_DISCRIMINATOR_SLICE)]
     pub fn execute(ctx: Context<Execute>, amount: u64) -> Result<()> {
         let clock = Clock::get()?;
+
+        // 0. Only run inside a Token-2022 transfer of a mint that uses this
+        //    hook: Token-2022 sets `transferring` on both token accounts for
+        //    the duration of the hook call.
+        require!(
+            mint_uses_this_hook(&ctx.accounts.mint.to_account_info())?,
+            TransferHookError::HookProgramMismatch
+        );
+        require!(
+            is_transferring(&ctx.accounts.source.to_account_info())?
+                && is_transferring(&ctx.accounts.destination.to_account_info())?,
+            TransferHookError::NotTransferring
+        );
 
         // 1. Validate registry is active
         require!(
@@ -896,6 +915,44 @@ fn extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
             false,
         )?,
     ])
+}
+
+/// True when `info` is a Token-2022 mint whose TransferHook extension points
+/// at this program.
+fn mint_uses_this_hook(info: &AccountInfo) -> Result<bool> {
+    use anchor_spl::token_2022::spl_token_2022::{
+        extension::{transfer_hook::TransferHook, BaseStateWithExtensions, StateWithExtensions},
+        state::Mint as SplMint,
+    };
+    if info.owner != &anchor_spl::token_2022::ID {
+        return Ok(false);
+    }
+    let data = info.try_borrow_data()?;
+    let mint = StateWithExtensions::<SplMint>::unpack(&data)?;
+    let Ok(hook) = mint.get_extension::<TransferHook>() else {
+        return Ok(false);
+    };
+    Ok(Option::<Pubkey>::from(hook.program_id) == Some(crate::ID))
+}
+
+/// True when `info` is a Token-2022 token account whose TransferHookAccount
+/// extension has `transferring` set, i.e. Token-2022 is mid-transfer.
+fn is_transferring(info: &AccountInfo) -> Result<bool> {
+    use anchor_spl::token_2022::spl_token_2022::{
+        extension::{
+            transfer_hook::TransferHookAccount, BaseStateWithExtensions, StateWithExtensions,
+        },
+        state::Account as SplAccount,
+    };
+    if info.owner != &anchor_spl::token_2022::ID {
+        return Ok(false);
+    }
+    let data = info.try_borrow_data()?;
+    let account = StateWithExtensions::<SplAccount>::unpack(&data)?;
+    let Ok(ext) = account.get_extension::<TransferHookAccount>() else {
+        return Ok(false);
+    };
+    Ok(bool::from(ext.transferring))
 }
 
 /// True when `info` is an initialized BlacklistEntry of `registry` that is
