@@ -83,6 +83,9 @@ pub enum TransferHookError {
 
     #[msg("Mint does not use this program as its transfer hook")]
     HookProgramMismatch,
+
+    #[msg("Whitelist entry is not active")]
+    EntryNotActive,
 }
 
 #[program]
@@ -182,6 +185,8 @@ pub mod transfer_hook {
         let clock = Clock::get()?;
         let registry = &mut ctx.accounts.registry;
         let entry = &mut ctx.accounts.whitelist_entry;
+
+        require!(entry.is_active, TransferHookError::EntryNotActive);
 
         entry.is_active = false;
         registry.whitelist_count = registry.whitelist_count.saturating_sub(1);
