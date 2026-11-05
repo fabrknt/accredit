@@ -570,6 +570,7 @@ pub struct RemoveFromWhitelist<'info> {
         mut,
         seeds = [WhitelistEntry::SEED_PREFIX, whitelist_entry.wallet.as_ref()],
         bump = whitelist_entry.bump,
+        constraint = whitelist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
     pub whitelist_entry: Account<'info, WhitelistEntry>,
 }
@@ -591,6 +592,7 @@ pub struct UpdateWhitelist<'info> {
         mut,
         seeds = [WhitelistEntry::SEED_PREFIX, whitelist_entry.wallet.as_ref()],
         bump = whitelist_entry.bump,
+        constraint = whitelist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
     pub whitelist_entry: Account<'info, WhitelistEntry>,
 }
@@ -647,6 +649,7 @@ pub struct RemoveFromBlacklist<'info> {
         mut,
         seeds = [BlacklistEntry::SEED_PREFIX, blacklist_entry.wallet.as_ref()],
         bump = blacklist_entry.bump,
+        constraint = blacklist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
 }
