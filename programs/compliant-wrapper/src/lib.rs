@@ -300,6 +300,27 @@ pub mod compliant_wrapper {
 
         Ok(())
     }
+
+    /// Point the wrapper at a different transfer-hook KYC registry
+    /// (authority only). The new account must be owned by the transfer-hook
+    /// program.
+    pub fn update_kyc_registry(ctx: Context<UpdateKycRegistry>) -> Result<()> {
+        let clock = Clock::get()?;
+        let config = &mut ctx.accounts.wrapper_config;
+        let old_kyc_registry = config.kyc_registry;
+        config.kyc_registry = ctx.accounts.new_kyc_registry.key();
+        config.updated_at = clock.unix_timestamp;
+
+        emit!(WrapperKycRegistryUpdated {
+            wrapper_config: config.key(),
+            old_kyc_registry,
+            new_kyc_registry: config.kyc_registry,
+            updated_by: ctx.accounts.authority.key(),
+            timestamp: clock.unix_timestamp,
+        });
+
+        Ok(())
+    }
 }
 
 // =============================================================================
@@ -533,6 +554,29 @@ pub struct WrapperAdmin<'info> {
     pub wrapper_config: Account<'info, WrapperConfig>,
 }
 
+#[derive(Accounts)]
+pub struct UpdateKycRegistry<'info> {
+    #[account(
+        constraint = authority.key() == wrapper_config.authority @ WrapperError::UnauthorizedAccess
+    )]
+    pub authority: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [
+            WrapperConfig::SEED_PREFIX,
+            wrapper_config.underlying_mint.as_ref(),
+            wrapper_config.authority.as_ref()
+        ],
+        bump = wrapper_config.bump,
+    )]
+    pub wrapper_config: Account<'info, WrapperConfig>,
+
+    /// CHECK: New transfer-hook KYC registry; must be owned by the transfer-hook program
+    #[account(owner = TRANSFER_HOOK_ID @ WrapperError::UnauthorizedAccess)]
+    pub new_kyc_registry: UncheckedAccount<'info>,
+}
+
 // =============================================================================
 // Events
 // =============================================================================
@@ -587,6 +631,15 @@ pub struct WrapperFeeUpdated {
     pub wrapper_config: Pubkey,
     pub old_fee_bps: u16,
     pub new_fee_bps: u16,
+    pub updated_by: Pubkey,
+    pub timestamp: i64,
+}
+
+#[event]
+pub struct WrapperKycRegistryUpdated {
+    pub wrapper_config: Pubkey,
+    pub old_kyc_registry: Pubkey,
+    pub new_kyc_registry: Pubkey,
     pub updated_by: Pubkey,
     pub timestamp: i64,
 }

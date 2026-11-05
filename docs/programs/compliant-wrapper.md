@@ -122,6 +122,12 @@ Updates the fee basis points. Authority only.
 **Parameters:**
 - `new_fee_bps: u16` — New fee in basis points
 
+### `update_kyc_registry`
+
+Points the wrapper at a different transfer-hook KYC registry. Authority only. The new registry account must be owned by the transfer-hook program.
+
+**Accounts:** `authority` (signer), `wrapper_config` (writable), `new_kyc_registry`.
+
 ## Events
 
 | Event | Fields |
@@ -132,6 +138,7 @@ Updates the fee basis points. Authority only.
 | `WrapperPaused` | wrapper_config, paused_by, timestamp |
 | `WrapperResumed` | wrapper_config, resumed_by, timestamp |
 | `WrapperFeeUpdated` | wrapper_config, old_fee_bps, new_fee_bps, updated_by, timestamp |
+| `WrapperKycRegistryUpdated` | wrapper_config, old_kyc_registry, new_kyc_registry, updated_by, timestamp |
 
 ## Error Codes
 
