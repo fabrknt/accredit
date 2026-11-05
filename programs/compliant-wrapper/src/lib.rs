@@ -24,11 +24,14 @@ declare_id!("CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L");
 
 /// Transfer-hook program ID for KYC enforcement
 pub const TRANSFER_HOOK_PROGRAM_ID: &str = "5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL";
+/// Same ID as a Pubkey, for account constraints
+pub const TRANSFER_HOOK_ID: Pubkey = pubkey!("5DLH2UrDD5bJFadn1gV1rof6sJ7MzJbVNnUfVMtGJgSL");
 
 // WhitelistEntry binary layout offsets (after 8-byte discriminator):
 // wallet(32) + registry(32) + kyc_level(1) + jurisdiction(1) + kyc_hash(32) + is_active(1) +
 // daily_limit(8) + daily_volume(8) + volume_reset_time(8) + verified_at(8) + expiry_timestamp(8) +
 // last_activity(8) + created_at(8) + bump(1)
+const WL_OFFSET_REGISTRY: usize = 8 + 32; // 40
 const WL_OFFSET_KYC_LEVEL: usize = 8 + 32 + 32; // 72
 const WL_OFFSET_IS_ACTIVE: usize = 8 + 32 + 32 + 1 + 1 + 32; // 106
 const WL_OFFSET_EXPIRY: usize = 8 + 32 + 32 + 1 + 1 + 32 + 1 + 8 + 8 + 8 + 8; // 139
@@ -95,6 +98,7 @@ pub mod compliant_wrapper {
         // Verify KYC by reading the WhitelistEntry account
         verify_kyc(
             &ctx.accounts.whitelist_entry,
+            &config.kyc_registry,
             config.min_kyc_level,
             clock.unix_timestamp,
         )?;
@@ -178,6 +182,7 @@ pub mod compliant_wrapper {
         // Verify KYC by reading the WhitelistEntry account
         verify_kyc(
             &ctx.accounts.whitelist_entry,
+            &config.kyc_registry,
             config.min_kyc_level,
             clock.unix_timestamp,
         )?;
@@ -303,9 +308,22 @@ pub mod compliant_wrapper {
 
 /// Verify that the user has a valid WhitelistEntry from the transfer-hook
 /// program by directly reading the account data.
-fn verify_kyc(whitelist_entry: &AccountInfo, min_kyc_level: u8, current_time: i64) -> Result<()> {
+/// Owner program and PDA ([b"whitelist", user]) are pinned by the account
+/// constraints; here the entry must also belong to the wrapper's registry.
+fn verify_kyc(
+    whitelist_entry: &AccountInfo,
+    kyc_registry: &Pubkey,
+    min_kyc_level: u8,
+    current_time: i64,
+) -> Result<()> {
     let data = whitelist_entry.try_borrow_data()?;
     require!(data.len() >= WL_MIN_SIZE, WrapperError::KycNotActive);
+
+    // Check registry == wrapper_config.kyc_registry (offset 40, Pubkey)
+    require!(
+        data[WL_OFFSET_REGISTRY..WL_OFFSET_REGISTRY + 32] == kyc_registry.to_bytes(),
+        WrapperError::KycNotActive
+    );
 
     // Check is_active (offset 106, 1 byte bool)
     let is_active = data[WL_OFFSET_IS_ACTIVE] == 1;
@@ -422,7 +440,13 @@ pub struct Wrap<'info> {
 
     /// WhitelistEntry PDA from the transfer-hook program.
     /// Seeds: [b"whitelist", user_wallet_pubkey] with transfer_hook_program_id.
-    /// CHECK: Validated by reading raw account data in verify_kyc().
+    /// CHECK: Owner and PDA pinned below; fields read in verify_kyc().
+    #[account(
+        owner = TRANSFER_HOOK_ID @ WrapperError::KycNotActive,
+        seeds = [accredit_types::WHITELIST_SEED_PREFIX, user.key().as_ref()],
+        bump,
+        seeds::program = TRANSFER_HOOK_ID,
+    )]
     pub whitelist_entry: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
@@ -468,7 +492,14 @@ pub struct Unwrap<'info> {
     pub user_wrapped_account: InterfaceAccount<'info, TokenAccount>,
 
     /// WhitelistEntry PDA from the transfer-hook program.
-    /// CHECK: Validated by reading raw account data in verify_kyc().
+    /// Seeds: [b"whitelist", user_wallet_pubkey] with transfer_hook_program_id.
+    /// CHECK: Owner and PDA pinned below; fields read in verify_kyc().
+    #[account(
+        owner = TRANSFER_HOOK_ID @ WrapperError::KycNotActive,
+        seeds = [accredit_types::WHITELIST_SEED_PREFIX, user.key().as_ref()],
+        bump,
+        seeds::program = TRANSFER_HOOK_ID,
+    )]
     pub whitelist_entry: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
