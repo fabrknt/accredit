@@ -431,41 +431,61 @@ pub mod transfer_hook {
             TransferHookError::RegistryInactive
         );
 
-        // 2. Check blacklist (SSS-2 compliance) — checked before whitelist
+        // 2. A transfer signed by the mint's permanent delegate (e.g. an
+        //    SSS-2 seize) skips the sender-side checks: the source may be
+        //    blacklisted or not whitelisted. Recipient checks still apply.
+        let registry_key = ctx.accounts.registry.key();
+        let delegate_transfer = is_permanent_delegate(
+            &ctx.accounts.mint.to_account_info(),
+            &ctx.accounts.owner.key(),
+        )?;
+
+        // 3. Check blacklist (SSS-2 compliance) — checked before whitelist
         //    If a blacklist PDA for this registry exists and is active, reject
         //    the transfer. The resolver always passes the PDA address; for
         //    wallets that were never blacklisted it is an empty account.
-        let registry_key = ctx.accounts.registry.key();
-        require!(
-            !blacklisted_in(&ctx.accounts.sender_blacklist, &registry_key)?,
-            TransferHookError::SenderBlacklisted
-        );
+        if !delegate_transfer {
+            require!(
+                !blacklisted_in(&ctx.accounts.sender_blacklist, &registry_key)?,
+                TransferHookError::SenderBlacklisted
+            );
+        }
         require!(
             !blacklisted_in(&ctx.accounts.recipient_blacklist, &registry_key)?,
             TransferHookError::RecipientBlacklisted
         );
 
-        // 3. Validate sender whitelist
-        let sender_entry = &ctx.accounts.sender_whitelist;
-        require!(
-            sender_entry.is_valid(clock.unix_timestamp),
-            TransferHookError::SenderNotWhitelisted
-        );
-        require!(
-            sender_entry.jurisdiction_allowed(),
-            TransferHookError::JurisdictionNotAllowed
-        );
-        require!(
-            sender_entry.can_transfer(amount, clock.unix_timestamp),
-            TransferHookError::DailyLimitExceeded
-        );
+        // 4. Validate sender whitelist
+        let sender_entry = if delegate_transfer {
+            None
+        } else {
+            let sender_entry = load_whitelist_entry(
+                &ctx.accounts.sender_whitelist,
+                &registry_key,
+                &ctx.accounts.source.owner,
+                TransferHookError::SenderNotWhitelisted,
+            )?;
+            require!(
+                sender_entry.is_valid(clock.unix_timestamp),
+                TransferHookError::SenderNotWhitelisted
+            );
+            require!(
+                sender_entry.jurisdiction_allowed(),
+                TransferHookError::JurisdictionNotAllowed
+            );
+            require!(
+                sender_entry.can_transfer(amount, clock.unix_timestamp),
+                TransferHookError::DailyLimitExceeded
+            );
 
-        // Per-level trade limit check
-        let sender_limit = trade_limit_for_level(&sender_entry.kyc_level);
-        require!(
-            amount <= sender_limit,
-            TransferHookError::TransferExceedsLimit
-        );
+            // Per-level trade limit check
+            let sender_limit = trade_limit_for_level(&sender_entry.kyc_level);
+            require!(
+                amount <= sender_limit,
+                TransferHookError::TransferExceedsLimit
+            );
+            Some(sender_entry)
+        };
 
         // Validate recipient whitelist
         let recipient_entry = &ctx.accounts.recipient_whitelist;
@@ -485,21 +505,36 @@ pub mod transfer_hook {
             TransferHookError::TransferExceedsLimit
         );
 
-        // Record the sender's daily volume so the next transfer's
-        // can_transfer check sees it (the meta for this entry is writable).
-        let sender_entry = &mut ctx.accounts.sender_whitelist;
-        sender_entry.record_transfer(amount, clock.unix_timestamp);
-        let sender_entry = &ctx.accounts.sender_whitelist;
-        let recipient_entry = &ctx.accounts.recipient_whitelist;
+        match sender_entry {
+            Some(mut sender_entry) => {
+                // Record the sender's daily volume so the next transfer's
+                // can_transfer check sees it (the meta for this entry is
+                // writable).
+                sender_entry.record_transfer(amount, clock.unix_timestamp);
+                let info = ctx.accounts.sender_whitelist.to_account_info();
+                let mut data = info.try_borrow_mut_data()?;
+                sender_entry.try_serialize(&mut &mut data[..])?;
 
-        emit!(TransferValidated {
-            sender: sender_entry.wallet,
-            recipient: recipient_entry.wallet,
-            amount,
-            sender_kyc_level: sender_entry.kyc_level,
-            recipient_kyc_level: recipient_entry.kyc_level,
-            timestamp: clock.unix_timestamp,
-        });
+                emit!(TransferValidated {
+                    sender: sender_entry.wallet,
+                    recipient: recipient_entry.wallet,
+                    amount,
+                    sender_kyc_level: sender_entry.kyc_level,
+                    recipient_kyc_level: recipient_entry.kyc_level,
+                    timestamp: clock.unix_timestamp,
+                });
+            }
+            None => {
+                emit!(DelegateTransferValidated {
+                    sender: ctx.accounts.source.owner,
+                    recipient: recipient_entry.wallet,
+                    delegate: ctx.accounts.owner.key(),
+                    amount,
+                    recipient_kyc_level: recipient_entry.kyc_level,
+                    timestamp: clock.unix_timestamp,
+                });
+            }
+        }
 
         Ok(())
     }
@@ -845,16 +880,16 @@ pub struct Execute<'info> {
     )]
     pub registry: Account<'info, KycRegistry>,
 
-    /// Whitelist entry of the source token account's owner wallet
-    /// (writable: execute records the daily volume)
+    /// CHECK: Whitelist entry PDA of the source token account's owner
+    /// wallet (writable: execute records the daily volume). Loaded and
+    /// checked by `load_whitelist_entry`; it may be empty for a transfer by
+    /// the permanent delegate.
     #[account(
         mut,
         seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), source.owner.as_ref()],
-        bump = sender_whitelist.bump,
-        constraint = sender_whitelist.registry == registry.key() @ TransferHookError::SenderNotWhitelisted,
-        constraint = sender_whitelist.wallet == source.owner @ TransferHookError::InvalidWhitelistEntry,
+        bump,
     )]
-    pub sender_whitelist: Account<'info, WhitelistEntry>,
+    pub sender_whitelist: UncheckedAccount<'info>,
 
     /// Whitelist entry of the destination token account's owner wallet
     #[account(
@@ -972,6 +1007,41 @@ fn mint_uses_this_hook(info: &AccountInfo) -> Result<bool> {
     Ok(Option::<Pubkey>::from(hook.program_id) == Some(crate::ID))
 }
 
+/// True when `authority` is the mint's PermanentDelegate.
+fn is_permanent_delegate(mint: &AccountInfo, authority: &Pubkey) -> Result<bool> {
+    use anchor_spl::token_2022::spl_token_2022::{
+        extension::{
+            permanent_delegate::PermanentDelegate, BaseStateWithExtensions, StateWithExtensions,
+        },
+        state::Mint as SplMint,
+    };
+    let data = mint.try_borrow_data()?;
+    let mint = StateWithExtensions::<SplMint>::unpack(&data)?;
+    let Ok(ext) = mint.get_extension::<PermanentDelegate>() else {
+        return Ok(false);
+    };
+    Ok(Option::<Pubkey>::from(ext.delegate) == Some(*authority))
+}
+
+/// Load the WhitelistEntry at `info` (address already checked by seeds) and
+/// check it belongs to `registry` and `wallet`. A missing entry fails with
+/// `missing`.
+fn load_whitelist_entry(
+    info: &AccountInfo,
+    registry: &Pubkey,
+    wallet: &Pubkey,
+    missing: TransferHookError,
+) -> Result<WhitelistEntry> {
+    if info.data_is_empty() || info.owner != &crate::ID {
+        return Err(missing.into());
+    }
+    let data = info.try_borrow_data()?;
+    let entry = WhitelistEntry::try_deserialize(&mut &data[..])?;
+    require_keys_eq!(entry.registry, *registry, missing);
+    require_keys_eq!(entry.wallet, *wallet, TransferHookError::InvalidWhitelistEntry);
+    Ok(entry)
+}
+
 /// True when `info` is a Token-2022 token account whose TransferHookAccount
 /// extension has `transferring` set, i.e. Token-2022 is mid-transfer.
 fn is_transferring(info: &AccountInfo) -> Result<bool> {
@@ -1061,6 +1131,18 @@ pub struct TransferValidated {
     pub recipient: Pubkey,
     pub amount: u64,
     pub sender_kyc_level: KycLevel,
+    pub recipient_kyc_level: KycLevel,
+    pub timestamp: i64,
+}
+
+/// Emitted for a transfer signed by the mint's permanent delegate, which
+/// skips the sender-side checks.
+#[event]
+pub struct DelegateTransferValidated {
+    pub sender: Pubkey,
+    pub recipient: Pubkey,
+    pub delegate: Pubkey,
+    pub amount: u64,
     pub recipient_kyc_level: KycLevel,
     pub timestamp: i64,
 }

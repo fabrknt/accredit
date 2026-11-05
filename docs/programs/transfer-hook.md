@@ -161,21 +161,26 @@ Rewrite an existing mint's meta list to the current list above (for mints whose 
 
 ### `execute`
 
-Main transfer hook entry point. Called automatically by Token-2022 on every transfer. Validates compliance and emits `TransferValidated` event.
+Main transfer hook entry point, dispatched by the SPL transfer-hook `Execute` discriminator. Validates compliance and emits `TransferValidated` (or `DelegateTransferValidated`, see below).
+
+It only runs inside a Token-2022 transfer: the mint's TransferHook extension must point at this program and both token accounts must have the `transferring` flag set. Calling it directly fails with `NotTransferring`.
 
 **Validation order:**
-1. Registry is active
-2. Neither owner wallet has an active BlacklistEntry of this registry
-3. Both WhitelistEntry accounts belong to this registry and to the token accounts' owner wallets
-4. Sender is whitelisted and not expired
-5. Sender jurisdiction is allowed
-6. Sender daily volume limit not exceeded
-7. Transfer amount within sender's per-level limit
-8. Recipient is whitelisted and not expired
-9. Recipient jurisdiction is allowed
-10. Transfer amount within recipient's per-level limit
+1. Mint uses this program as its hook; both token accounts are mid-transfer
+2. Registry is active
+3. Neither owner wallet has an active BlacklistEntry of this registry
+4. Both WhitelistEntry accounts belong to this registry and to the token accounts' owner wallets
+5. Sender is whitelisted and not expired
+6. Sender jurisdiction is allowed
+7. Sender daily volume limit not exceeded (`daily_limit` 0 = unlimited)
+8. Transfer amount within sender's per-level limit
+9. Recipient is whitelisted and not expired
+10. Recipient jurisdiction is allowed
+11. Transfer amount within recipient's per-level limit
 
 On success, the transfer amount is added to the sender WhitelistEntry's `daily_volume` (reset after 24h), so `daily_limit` is enforced across transfers.
+
+**Permanent delegate.** When the transfer authority (`owner`, account index 3) is the mint's PermanentDelegate, the sender-side checks (sender blacklist, steps 4-8 for the sender, daily volume) are skipped, so an SSS-2 seize works from a blacklisted or non-whitelisted holder. The recipient must still be whitelisted, allowed and not blacklisted, and the registry must be active. A regular (approved) delegate gets no exemption.
 
 **Accounts:**
 
@@ -184,7 +189,7 @@ On success, the transfer amount is added to the sender WhitelistEntry's `daily_v
 | `source` | No | No | Source token account |
 | `mint` | No | No | Token mint |
 | `destination` | No | No | Destination token account |
-| `owner` | No | No | Token owner |
+| `owner` | No | No | Transfer authority (token owner or delegate) |
 | `extra_account_meta_list` | No | No | Meta list |
 | `registry` | No | No | KycRegistry PDA |
 | `sender_whitelist` | No | Yes | WhitelistEntry PDA of the source owner wallet (daily volume is recorded here) |
