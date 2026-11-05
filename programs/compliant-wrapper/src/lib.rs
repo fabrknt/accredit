@@ -354,8 +354,8 @@ fn verify_kyc_registry(registry: &AccountInfo, wrapped_mint: &Pubkey) -> Result<
 
 /// Verify that the user has a valid WhitelistEntry from the transfer-hook
 /// program by directly reading the account data.
-/// Owner program and PDA ([b"whitelist", user]) are pinned by the account
-/// constraints; here the entry must also belong to the wrapper's registry.
+/// Owner program and PDA ([b"whitelist", kyc_registry, user]) are pinned by
+/// the account constraints; the stored registry is checked here as well.
 fn verify_kyc(
     whitelist_entry: &AccountInfo,
     kyc_registry: &Pubkey,
@@ -489,11 +489,15 @@ pub struct Wrap<'info> {
     pub user_wrapped_account: InterfaceAccount<'info, TokenAccount>,
 
     /// WhitelistEntry PDA from the transfer-hook program.
-    /// Seeds: [b"whitelist", user_wallet_pubkey] with transfer_hook_program_id.
+    /// Seeds: [b"whitelist", kyc_registry, user_wallet_pubkey] with transfer_hook_program_id.
     /// CHECK: Owner and PDA pinned below; fields read in verify_kyc().
     #[account(
         owner = TRANSFER_HOOK_ID @ WrapperError::KycNotActive,
-        seeds = [accredit_types::WHITELIST_SEED_PREFIX, user.key().as_ref()],
+        seeds = [
+            accredit_types::WHITELIST_SEED_PREFIX,
+            wrapper_config.kyc_registry.as_ref(),
+            user.key().as_ref()
+        ],
         bump,
         seeds::program = TRANSFER_HOOK_ID,
     )]
@@ -546,11 +550,15 @@ pub struct Unwrap<'info> {
     pub user_wrapped_account: InterfaceAccount<'info, TokenAccount>,
 
     /// WhitelistEntry PDA from the transfer-hook program.
-    /// Seeds: [b"whitelist", user_wallet_pubkey] with transfer_hook_program_id.
+    /// Seeds: [b"whitelist", kyc_registry, user_wallet_pubkey] with transfer_hook_program_id.
     /// CHECK: Owner and PDA pinned below; fields read in verify_kyc().
     #[account(
         owner = TRANSFER_HOOK_ID @ WrapperError::KycNotActive,
-        seeds = [accredit_types::WHITELIST_SEED_PREFIX, user.key().as_ref()],
+        seeds = [
+            accredit_types::WHITELIST_SEED_PREFIX,
+            wrapper_config.kyc_registry.as_ref(),
+            user.key().as_ref()
+        ],
         bump,
         seeds::program = TRANSFER_HOOK_ID,
     )]
@@ -697,5 +705,36 @@ mod tests {
         let mut data = Vec::new();
         reg.try_serialize(&mut data).unwrap();
         assert_eq!(&data[KR_OFFSET_MINT..KR_OFFSET_MINT + 32], reg.mint.as_ref());
+    }
+
+    #[test]
+    fn whitelist_offsets_match_transfer_hook() {
+        use transfer_hook::state::{Jurisdiction, KycLevel, WhitelistEntry};
+        let entry = WhitelistEntry {
+            wallet: Pubkey::new_unique(),
+            registry: Pubkey::new_unique(),
+            kyc_level: KycLevel::Institutional,
+            jurisdiction: Jurisdiction::Japan,
+            kyc_hash: [7; 32],
+            is_active: true,
+            daily_limit: 1,
+            daily_volume: 2,
+            volume_reset_time: 3,
+            verified_at: 4,
+            expiry_timestamp: 0x0102_0304_0506_0708,
+            last_activity: 5,
+            created_at: 6,
+            bump: 255,
+        };
+        let mut data = Vec::new();
+        entry.try_serialize(&mut data).unwrap();
+        assert_eq!(data.len(), WL_MIN_SIZE);
+        assert_eq!(&data[WL_OFFSET_REGISTRY..WL_OFFSET_REGISTRY + 32], entry.registry.as_ref());
+        assert_eq!(data[WL_OFFSET_KYC_LEVEL], KycLevel::Institutional as u8);
+        assert_eq!(data[WL_OFFSET_IS_ACTIVE], 1);
+        assert_eq!(
+            &data[WL_OFFSET_EXPIRY..WL_OFFSET_EXPIRY + 8],
+            &entry.expiry_timestamp.to_le_bytes()
+        );
     }
 }

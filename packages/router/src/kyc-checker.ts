@@ -9,21 +9,28 @@ import { KycClient } from '@fabrknt/accredit-sdk';
  */
 export class KycComplianceChecker {
   private kycClient: KycClient;
+  private kycRegistry: PublicKey;
 
-  constructor(connection: Connection, transferHookProgramId: PublicKey) {
+  /** `kycRegistry` is the transfer-hook KycRegistry whose entries count. */
+  constructor(
+    connection: Connection,
+    transferHookProgramId: PublicKey,
+    kycRegistry: PublicKey
+  ) {
     this.kycClient = new KycClient(connection, transferHookProgramId);
+    this.kycRegistry = kycRegistry;
   }
 
   /** Derive the WhitelistEntry PDA for a given wallet */
   deriveWhitelistPda(wallet: PublicKey): [PublicKey, number] {
-    return this.kycClient.deriveWhitelistPda(wallet);
+    return this.kycClient.deriveWhitelistPda(this.kycRegistry, wallet);
   }
 
   /** Fetch a trader's WhitelistEntry from on-chain state */
   async getWhitelistEntry(
     trader: PublicKey
   ): Promise<WhitelistEntry | null> {
-    return this.kycClient.getWhitelistEntry(trader);
+    return this.kycClient.getWhitelistEntry(this.kycRegistry, trader);
   }
 
   /** Check if a trader meets minimum KYC requirements */
@@ -33,6 +40,7 @@ export class KycComplianceChecker {
     allowedJurisdictionBitmask: number
   ): Promise<ComplianceCheckResult> {
     return this.kycClient.checkCompliance(
+      this.kycRegistry,
       trader,
       minKycLevel,
       allowedJurisdictionBitmask
@@ -41,6 +49,6 @@ export class KycComplianceChecker {
 
   /** Clear the entry cache */
   clearCache(trader?: PublicKey): void {
-    this.kycClient.clearCache(trader);
+    this.kycClient.clearCache(trader ? this.kycRegistry : undefined, trader);
   }
 }

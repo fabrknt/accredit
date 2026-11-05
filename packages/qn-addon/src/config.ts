@@ -9,6 +9,8 @@ export const config = {
   transferHookProgramId:
     process.env.TRANSFER_HOOK_PROGRAM_ID ||
     "ACCReD1tKYCgateway1111111111111111111111111",
+  /* Transfer-hook KycRegistry whose whitelist entries are read (required) */
+  kycRegistry: process.env.KYC_REGISTRY || "",
   wrapperProgramId:
     process.env.WRAPPER_PROGRAM_ID ||
     "CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDnj1L",

@@ -26,9 +26,10 @@ const programId = new PublicKey('AccrFMBAPz2yCmL4mw6JfMtJRm2P43kJhXAJDBhnZoR');
 // ---------------------------------------------------------------------------
 
 const walletAddress = new PublicKey('InvestorWa11et111111111111111111111111111111');
+const stablecoinMint = new PublicKey('Stab1eMint111111111111111111111111111111111');
 
-const [registryPda] = findKycRegistryPda(programId);
-const [whitelistPda] = findWhitelistEntryPda(walletAddress, programId);
+const [registryPda] = findKycRegistryPda(stablecoinMint, programId);
+const [whitelistPda] = findWhitelistEntryPda(registryPda, walletAddress, programId);
 
 console.log('Registry PDA:  ', registryPda.toBase58());
 console.log('Whitelist PDA: ', whitelistPda.toBase58());
@@ -41,7 +42,7 @@ async function checkKycStatus(wallet: PublicKey) {
   const client = new KycClient(connection, programId);
 
   // Fetch the on-chain whitelist entry (returns null if not found)
-  const entry = await client.getWhitelistEntry(wallet);
+  const entry = await client.getWhitelistEntry(registryPda, wallet);
 
   if (!entry) {
     console.log('Wallet not KYC-verified');

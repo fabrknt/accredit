@@ -19,15 +19,21 @@ describe('@fabrknt/accredit-sdk PDA helpers', () => {
     expect(bump).to.be.a('number');
   });
 
-  it('derives whitelist entry PDA (unified: wallet only)', () => {
+  it('derives whitelist entry PDA (per registry and wallet)', () => {
     const wallet = Keypair.generate().publicKey;
-    const [pda, bump] = findWhitelistEntryPda(wallet, TRANSFER_HOOK_PROGRAM_ID);
+    const [registry] = findKycRegistryPda(Keypair.generate().publicKey, TRANSFER_HOOK_PROGRAM_ID);
+    const [pda, bump] = findWhitelistEntryPda(registry, wallet, TRANSFER_HOOK_PROGRAM_ID);
     expect(pda.toBase58()).to.be.a('string');
     expect(bump).to.be.a('number');
 
-    // Same wallet always produces same PDA
-    const [pda2] = findWhitelistEntryPda(wallet, TRANSFER_HOOK_PROGRAM_ID);
+    // Same registry and wallet always produce the same PDA
+    const [pda2] = findWhitelistEntryPda(registry, wallet, TRANSFER_HOOK_PROGRAM_ID);
     expect(pda.toBase58()).to.equal(pda2.toBase58());
+
+    // The same wallet in another registry has a different PDA
+    const [otherRegistry] = findKycRegistryPda(Keypair.generate().publicKey, TRANSFER_HOOK_PROGRAM_ID);
+    const [pda3] = findWhitelistEntryPda(otherRegistry, wallet, TRANSFER_HOOK_PROGRAM_ID);
+    expect(pda3.toBase58()).to.not.equal(pda.toBase58());
   });
 
   it('derives pool registry PDA', () => {

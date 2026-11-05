@@ -26,6 +26,7 @@ const connection = new Connection('https://api.devnet.solana.com');
 const registryAuthority = new PublicKey('...');  // Pool registry authority
 
 const router = new ComplianceAwareRouter(connection, registryAuthority, {
+  kycRegistry: '...',  // transfer-hook KycRegistry whose whitelist is trusted (required)
   jupiterApiBaseUrl: 'https://quote-api.jup.ag/v6',
   defaultSlippageBps: 50,
   fallbackToDirectRoutes: true,
@@ -214,7 +215,7 @@ const noirProver: NoirProverLike = {
 const router = new ComplianceAwareRouter(
   connection,
   registryAuthority,
-  {},
+  { kycRegistry: '...' },
   noirProver  // optional fourth argument
 );
 

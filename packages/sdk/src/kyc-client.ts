@@ -21,9 +21,9 @@ export class KycClient {
     return findKycRegistryPda(mint, this.programId);
   }
 
-  /** Derive PDA for WhitelistEntry */
-  deriveWhitelistPda(wallet: PublicKey): [PublicKey, number] {
-    return findWhitelistEntryPda(wallet, this.programId);
+  /** Derive PDA for WhitelistEntry of `wallet` in `registry` */
+  deriveWhitelistPda(registry: PublicKey, wallet: PublicKey): [PublicKey, number] {
+    return findWhitelistEntryPda(registry, wallet, this.programId);
   }
 
   /** Fetch a KycRegistry account */
@@ -34,30 +34,34 @@ export class KycClient {
     return this.deserializeRegistry(accountInfo.data);
   }
 
-  /** Fetch a WhitelistEntry account */
-  async getWhitelistEntry(wallet: PublicKey): Promise<WhitelistEntry | null> {
-    const walletStr = wallet.toBase58();
-    const cached = this.entryCache.get(walletStr);
+  /** Fetch the WhitelistEntry of `wallet` in `registry` */
+  async getWhitelistEntry(
+    registry: PublicKey,
+    wallet: PublicKey
+  ): Promise<WhitelistEntry | null> {
+    const cacheKey = `${registry.toBase58()}:${wallet.toBase58()}`;
+    const cached = this.entryCache.get(cacheKey);
     if (cached) return cached;
 
-    const [pda] = this.deriveWhitelistPda(wallet);
+    const [pda] = this.deriveWhitelistPda(registry, wallet);
     const accountInfo = await this.connection.getAccountInfo(pda);
     if (!accountInfo) return null;
 
     const entry = this.deserializeWhitelistEntry(accountInfo.data);
     if (entry) {
-      this.entryCache.set(walletStr, entry);
+      this.entryCache.set(cacheKey, entry);
     }
     return entry;
   }
 
   /** Check trader compliance */
   async checkCompliance(
+    registry: PublicKey,
     wallet: PublicKey,
     minKycLevel: KycLevel,
     allowedJurisdictionBitmask: number
   ): Promise<{ isCompliant: boolean; reason?: string; entry?: WhitelistEntry }> {
-    const entry = await this.getWhitelistEntry(wallet);
+    const entry = await this.getWhitelistEntry(registry, wallet);
 
     if (!entry) {
       return { isCompliant: false, reason: 'No KYC record found' };
@@ -92,10 +96,10 @@ export class KycClient {
     return { isCompliant: true, entry };
   }
 
-  /** Clear cache */
-  clearCache(wallet?: PublicKey): void {
-    if (wallet) {
-      this.entryCache.delete(wallet.toBase58());
+  /** Clear cache (one entry when registry and wallet are given) */
+  clearCache(registry?: PublicKey, wallet?: PublicKey): void {
+    if (registry && wallet) {
+      this.entryCache.delete(`${registry.toBase58()}:${wallet.toBase58()}`);
     } else {
       this.entryCache.clear();
     }

@@ -115,7 +115,7 @@ const WRAPPER_PROGRAM = new PublicKey('CWRPxn8XsLkWW5fN5RYkWRQr5o4bT1RaAi3AhAPDn
 
 // Core layer PDAs
 const [registryPda, registryBump] = findKycRegistryPda(mint, TRANSFER_HOOK_PROGRAM);
-const [entryPda, entryBump] = findWhitelistEntryPda(wallet, TRANSFER_HOOK_PROGRAM);
+const [entryPda, entryBump] = findWhitelistEntryPda(registryPda, wallet, TRANSFER_HOOK_PROGRAM);
 const [metasPda, metasBump] = findExtraAccountMetaListPda(mint, TRANSFER_HOOK_PROGRAM);
 
 // Routing layer PDAs
@@ -150,7 +150,8 @@ if (registry) {
 }
 
 // Fetch a whitelist entry (results are cached)
-const entry = await client.getWhitelistEntry(wallet);
+const [registryPda] = client.deriveRegistryPda(mint);
+const entry = await client.getWhitelistEntry(registryPda, wallet);
 if (entry) {
   console.log('KYC Level:', entry.kycLevel);
   console.log('Jurisdiction:', entry.jurisdiction);
@@ -159,6 +160,7 @@ if (entry) {
 
 // Full compliance check
 const result = await client.checkCompliance(
+  registryPda,
   wallet,
   KycLevel.Standard,    // minimum required level
   0b00101111            // allowed jurisdictions bitmask

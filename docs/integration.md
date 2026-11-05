@@ -191,8 +191,8 @@ if (!result.isCompliant) {
 ```typescript
 import { findWhitelistEntryPda, findKycRegistryPda } from '@fabrknt/accredit-sdk';
 
-const [entryPda] = findWhitelistEntryPda(wallet, hookProgram);
 const [registryPda] = findKycRegistryPda(mint, hookProgram);
+const [entryPda] = findWhitelistEntryPda(registryPda, wallet, hookProgram);
 ```
 
 **Routing: Get a compliant swap quote**
@@ -200,7 +200,9 @@ const [registryPda] = findKycRegistryPda(mint, hookProgram);
 ```typescript
 import { ComplianceAwareRouter } from '@fabrknt/accredit-router';
 
-const router = new ComplianceAwareRouter(connection, registryAuthority);
+const router = new ComplianceAwareRouter(connection, registryAuthority, {
+  kycRegistry: registryPda.toBase58(),
+});
 await router.syncWhitelist();
 
 const quote = await router.getCompliantQuote(

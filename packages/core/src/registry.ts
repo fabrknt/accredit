@@ -46,6 +46,8 @@ export interface ComplianceRouterConfig {
   registryAddress?: string;
   /** Transfer-hook/compliance contract address */
   complianceAddress?: string;
+  /** Transfer-hook KycRegistry account whose whitelist entries are trusted */
+  kycRegistry?: string;
   /** DEX aggregator API base URL */
   aggregatorApiBaseUrl?: string;
   /** Default slippage in basis points */

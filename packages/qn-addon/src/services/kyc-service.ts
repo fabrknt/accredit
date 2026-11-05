@@ -13,12 +13,21 @@ export const TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
 /*  PDA derivation                                                     */
 /* ------------------------------------------------------------------ */
 
+/** KycRegistry whose entries this service reads (KYC_REGISTRY env). */
+function kycRegistry(): PublicKey {
+  if (!config.kycRegistry) {
+    throw new Error("KYC_REGISTRY is not configured");
+  }
+  return new PublicKey(config.kycRegistry);
+}
+
 export function findWhitelistEntryPda(
   wallet: PublicKey,
+  registry: PublicKey = kycRegistry(),
   programId: PublicKey = TRANSFER_HOOK_PROGRAM_ID,
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("whitelist"), wallet.toBytes()],
+    [Buffer.from("whitelist"), registry.toBytes(), wallet.toBytes()],
     programId,
   );
 }

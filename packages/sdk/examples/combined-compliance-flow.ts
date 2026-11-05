@@ -9,7 +9,7 @@
  * and securities platforms to satisfy both AML and KYC requirements.
  */
 import { Connection, PublicKey } from '@solana/web3.js';
-import { KycClient, findWhitelistEntryPda, KycLevel } from '@fabrknt/accredit-sdk';
+import { KycClient, findKycRegistryPda, KycLevel } from '@fabrknt/accredit-sdk';
 import { ComplrClient } from '@complr/sdk';
 
 // ---------------------------------------------------------------------------
@@ -18,6 +18,8 @@ import { ComplrClient } from '@complr/sdk';
 
 const connection = new Connection('https://api.devnet.solana.com');
 const programId = new PublicKey('AccrFMBAPz2yCmL4mw6JfMtJRm2P43kJhXAJDBhnZoR');
+const stablecoinMint = new PublicKey('Stab1eMint111111111111111111111111111111111');
+const [kycRegistry] = findKycRegistryPda(stablecoinMint, programId);
 
 const complr = new ComplrClient({
   apiKey: process.env.COMPLR_API_KEY || '',
@@ -44,7 +46,7 @@ async function fullComplianceCheck(walletAddress: string): Promise<{
 
   // Step 2: On-chain KYC verification
   const kycClient = new KycClient(connection, programId);
-  const entry = await kycClient.getWhitelistEntry(wallet);
+  const entry = await kycClient.getWhitelistEntry(kycRegistry, wallet);
 
   if (!entry) {
     return { allowed: false, reason: 'No on-chain KYC credential found' };

@@ -65,8 +65,8 @@ KycRegistry (per mint)
   ├── updated_at: i64
   └── bump: u8
 
-WhitelistEntry (per wallet)
-  PDA: ["whitelist", wallet]
+WhitelistEntry (per registry and wallet)
+  PDA: ["whitelist", registry, wallet]
   ├── wallet: Pubkey
   ├── registry: Pubkey
   ├── kyc_level: KycLevel
@@ -160,7 +160,8 @@ All PDAs use deterministic seeds. The TypeScript SDK provides helper functions t
 | Account | Seeds | Program |
 |---------|-------|---------|
 | KycRegistry | `["kyc_registry", mint]` | transfer-hook |
-| WhitelistEntry | `["whitelist", wallet]` | transfer-hook |
+| WhitelistEntry | `["whitelist", registry, wallet]` | transfer-hook |
+| BlacklistEntry | `["blacklist", registry, wallet]` | transfer-hook |
 | ExtraAccountMetaList | `["extra-account-metas", mint]` | transfer-hook |
 | CompliantPoolRegistry | `["pool_registry", authority]` | compliant-registry |
 | PoolComplianceEntry | `["pool_entry", registry, amm_key]` | compliant-registry |

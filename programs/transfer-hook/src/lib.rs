@@ -67,6 +67,9 @@ pub enum TransferHookError {
 
     #[msg("Arithmetic overflow")]
     Overflow,
+
+    #[msg("Extra account meta list has an unexpected size")]
+    InvalidExtraAccountMetaList,
 }
 
 #[program]
@@ -236,67 +239,7 @@ pub mod transfer_hook {
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
-        let account_metas = vec![
-            // KYC Registry
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal {
-                        bytes: KycRegistry::SEED_PREFIX.to_vec(),
-                    },
-                    Seed::AccountKey { index: 1 }, // mint
-                ],
-                false, // is_signer
-                false, // is_writable
-            )?,
-            // Sender whitelist entry
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal {
-                        bytes: WhitelistEntry::SEED_PREFIX.to_vec(),
-                    },
-                    // owner wallet of the source token account (bytes 32..64)
-                    Seed::AccountData { account_index: 0, data_index: 32, length: 32 },
-                ],
-                false,
-                true, // writable to update daily volume
-            )?,
-            // Recipient whitelist entry
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal {
-                        bytes: WhitelistEntry::SEED_PREFIX.to_vec(),
-                    },
-                    // owner wallet of the destination token account (bytes 32..64)
-                    Seed::AccountData { account_index: 2, data_index: 32, length: 32 },
-                ],
-                false,
-                false,
-            )?,
-            // Sender blacklist entry (SSS-2)
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal {
-                        bytes: BlacklistEntry::SEED_PREFIX.to_vec(),
-                    },
-                    // owner wallet of the source token account
-                    Seed::AccountData { account_index: 0, data_index: 32, length: 32 },
-                ],
-                false,
-                false,
-            )?,
-            // Recipient blacklist entry (SSS-2)
-            ExtraAccountMeta::new_with_seeds(
-                &[
-                    Seed::Literal {
-                        bytes: BlacklistEntry::SEED_PREFIX.to_vec(),
-                    },
-                    // owner wallet of the destination token account
-                    Seed::AccountData { account_index: 2, data_index: 32, length: 32 },
-                ],
-                false,
-                false,
-            )?,
-        ];
+        let account_metas = extra_account_metas()?;
 
         let account_size = ExtraAccountMetaList::size_of(account_metas.len())?;
         let lamports = Rent::get()?.minimum_balance(account_size);
@@ -323,6 +266,24 @@ pub mod transfer_hook {
             &account_metas,
         )?;
 
+        Ok(())
+    }
+
+    /// Rewrite the extra account metas of an existing mint to the current
+    /// list (e.g. after the entry PDA seeds changed). Registry authority only.
+    pub fn update_extra_account_meta_list(
+        ctx: Context<UpdateExtraAccountMetaList>,
+    ) -> Result<()> {
+        let account_metas = extra_account_metas()?;
+        let info = ctx.accounts.extra_account_meta_list.to_account_info();
+        require!(
+            info.data_len() == ExtraAccountMetaList::size_of(account_metas.len())?,
+            TransferHookError::InvalidExtraAccountMetaList
+        );
+        ExtraAccountMetaList::update::<ExecuteInstruction>(
+            &mut info.try_borrow_mut_data()?,
+            &account_metas,
+        )?;
         Ok(())
     }
 
@@ -541,7 +502,7 @@ pub struct AddToWhitelist<'info> {
         init,
         payer = authority,
         space = 8 + WhitelistEntry::INIT_SPACE,
-        seeds = [WhitelistEntry::SEED_PREFIX, params.wallet.as_ref()],
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), params.wallet.as_ref()],
         bump
     )]
     pub whitelist_entry: Account<'info, WhitelistEntry>,
@@ -575,7 +536,7 @@ pub struct RemoveFromWhitelist<'info> {
 
     #[account(
         mut,
-        seeds = [WhitelistEntry::SEED_PREFIX, whitelist_entry.wallet.as_ref()],
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), whitelist_entry.wallet.as_ref()],
         bump = whitelist_entry.bump,
         constraint = whitelist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
@@ -597,7 +558,7 @@ pub struct UpdateWhitelist<'info> {
 
     #[account(
         mut,
-        seeds = [WhitelistEntry::SEED_PREFIX, whitelist_entry.wallet.as_ref()],
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), whitelist_entry.wallet.as_ref()],
         bump = whitelist_entry.bump,
         constraint = whitelist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
@@ -630,7 +591,7 @@ pub struct AddToBlacklist<'info> {
         init,
         payer = authority,
         space = 8 + BlacklistEntry::INIT_SPACE,
-        seeds = [BlacklistEntry::SEED_PREFIX, params.wallet.as_ref()],
+        seeds = [BlacklistEntry::SEED_PREFIX, registry.key().as_ref(), params.wallet.as_ref()],
         bump
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
@@ -654,11 +615,36 @@ pub struct RemoveFromBlacklist<'info> {
 
     #[account(
         mut,
-        seeds = [BlacklistEntry::SEED_PREFIX, blacklist_entry.wallet.as_ref()],
+        seeds = [BlacklistEntry::SEED_PREFIX, registry.key().as_ref(), blacklist_entry.wallet.as_ref()],
         bump = blacklist_entry.bump,
         constraint = blacklist_entry.registry == registry.key() @ TransferHookError::Unauthorized,
     )]
     pub blacklist_entry: Account<'info, BlacklistEntry>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateExtraAccountMetaList<'info> {
+    #[account(
+        constraint = authority.key() == registry.authority @ TransferHookError::Unauthorized
+    )]
+    pub authority: Signer<'info>,
+
+    pub mint: InterfaceAccount<'info, Mint>,
+
+    #[account(
+        seeds = [KycRegistry::SEED_PREFIX, mint.key().as_ref()],
+        bump = registry.bump,
+    )]
+    pub registry: Account<'info, KycRegistry>,
+
+    /// CHECK: PDA of this program for the mint; owner checked below
+    #[account(
+        mut,
+        seeds = [b"extra-account-metas", mint.key().as_ref()],
+        bump,
+        owner = crate::ID,
+    )]
+    pub extra_account_meta_list: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -705,7 +691,7 @@ pub struct Execute<'info> {
     /// (writable: execute records the daily volume)
     #[account(
         mut,
-        seeds = [WhitelistEntry::SEED_PREFIX, source.owner.as_ref()],
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), source.owner.as_ref()],
         bump = sender_whitelist.bump,
         constraint = sender_whitelist.registry == registry.key() @ TransferHookError::SenderNotWhitelisted,
         constraint = sender_whitelist.wallet == source.owner @ TransferHookError::InvalidWhitelistEntry,
@@ -714,7 +700,7 @@ pub struct Execute<'info> {
 
     /// Whitelist entry of the destination token account's owner wallet
     #[account(
-        seeds = [WhitelistEntry::SEED_PREFIX, destination.owner.as_ref()],
+        seeds = [WhitelistEntry::SEED_PREFIX, registry.key().as_ref(), destination.owner.as_ref()],
         bump = recipient_whitelist.bump,
         constraint = recipient_whitelist.registry == registry.key() @ TransferHookError::RecipientNotWhitelisted,
         constraint = recipient_whitelist.wallet == destination.owner @ TransferHookError::InvalidWhitelistEntry,
@@ -724,17 +710,90 @@ pub struct Execute<'info> {
     /// CHECK: Blacklist PDA of the source owner wallet. Empty unless the
     /// wallet was blacklisted; read by `blacklisted_in`.
     #[account(
-        seeds = [BlacklistEntry::SEED_PREFIX, source.owner.as_ref()],
+        seeds = [BlacklistEntry::SEED_PREFIX, registry.key().as_ref(), source.owner.as_ref()],
         bump,
     )]
     pub sender_blacklist: UncheckedAccount<'info>,
 
     /// CHECK: Blacklist PDA of the destination owner wallet (see above).
     #[account(
-        seeds = [BlacklistEntry::SEED_PREFIX, destination.owner.as_ref()],
+        seeds = [BlacklistEntry::SEED_PREFIX, registry.key().as_ref(), destination.owner.as_ref()],
         bump,
     )]
     pub recipient_blacklist: UncheckedAccount<'info>,
+}
+
+
+/// Extra accounts Token-2022 resolves for `execute`. Indexes 0..=4 are the
+/// standard execute accounts (source, mint, destination, owner, meta list);
+/// the registry is index 5, so the whitelist and blacklist entries are the
+/// PDAs of that registry for the source and destination owner wallets.
+fn extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
+    Ok(vec![
+        // KYC Registry
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: KycRegistry::SEED_PREFIX.to_vec(),
+                },
+                Seed::AccountKey { index: 1 }, // mint
+            ],
+            false, // is_signer
+            false, // is_writable
+        )?,
+        // Sender whitelist entry
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: WhitelistEntry::SEED_PREFIX.to_vec(),
+                },
+                Seed::AccountKey { index: 5 }, // registry
+                // owner wallet of the source token account (bytes 32..64)
+                Seed::AccountData { account_index: 0, data_index: 32, length: 32 },
+            ],
+            false,
+            true, // writable to update daily volume
+        )?,
+        // Recipient whitelist entry
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: WhitelistEntry::SEED_PREFIX.to_vec(),
+                },
+                Seed::AccountKey { index: 5 }, // registry
+                // owner wallet of the destination token account (bytes 32..64)
+                Seed::AccountData { account_index: 2, data_index: 32, length: 32 },
+            ],
+            false,
+            false,
+        )?,
+        // Sender blacklist entry (SSS-2)
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: BlacklistEntry::SEED_PREFIX.to_vec(),
+                },
+                Seed::AccountKey { index: 5 }, // registry
+                // owner wallet of the source token account
+                Seed::AccountData { account_index: 0, data_index: 32, length: 32 },
+            ],
+            false,
+            false,
+        )?,
+        // Recipient blacklist entry (SSS-2)
+        ExtraAccountMeta::new_with_seeds(
+            &[
+                Seed::Literal {
+                    bytes: BlacklistEntry::SEED_PREFIX.to_vec(),
+                },
+                Seed::AccountKey { index: 5 }, // registry
+                // owner wallet of the destination token account
+                Seed::AccountData { account_index: 2, data_index: 32, length: 32 },
+            ],
+            false,
+            false,
+        )?,
+    ])
 }
 
 /// True when `info` is an initialized BlacklistEntry of `registry` that is

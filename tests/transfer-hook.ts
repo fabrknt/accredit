@@ -35,17 +35,17 @@ describe('transfer-hook (accredit)', () => {
     expect(registryPda).to.not.be.null;
   });
 
-  it('derives whitelist entry PDA with unified seeds', async () => {
+  it('derives whitelist entry PDA from registry and wallet', async () => {
     const wallet = Keypair.generate().publicKey;
 
     const [whitelistPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), wallet.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), wallet.toBuffer()],
       program.programId
     );
 
     // Verify PDA is deterministic
     const [whitelistPda2] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), wallet.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), wallet.toBuffer()],
       program.programId
     );
 
@@ -70,14 +70,31 @@ describe('transfer-hook (accredit)', () => {
     const wallet2 = Keypair.generate().publicKey;
 
     const [pda1] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), wallet1.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), wallet1.toBuffer()],
       program.programId
     );
     const [pda2] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), wallet2.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), wallet2.toBuffer()],
       program.programId
     );
 
+    expect(pda1.toBase58()).to.not.equal(pda2.toBase58());
+  });
+
+  it('the same wallet has a different whitelist PDA in another registry', () => {
+    const wallet = Keypair.generate().publicKey;
+    const [otherRegistry] = PublicKey.findProgramAddressSync(
+      [Buffer.from('kyc_registry'), Keypair.generate().publicKey.toBuffer()],
+      program.programId
+    );
+    const [pda1] = PublicKey.findProgramAddressSync(
+      [Buffer.from('whitelist'), registryPda.toBuffer(), wallet.toBuffer()],
+      program.programId
+    );
+    const [pda2] = PublicKey.findProgramAddressSync(
+      [Buffer.from('whitelist'), otherRegistry.toBuffer(), wallet.toBuffer()],
+      program.programId
+    );
     expect(pda1.toBase58()).to.not.equal(pda2.toBase58());
   });
 
@@ -117,11 +134,11 @@ describe('transfer-hook (accredit)', () => {
     const recipient = Keypair.generate().publicKey;
 
     const [senderPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), sender.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), sender.toBuffer()],
       program.programId
     );
     const [recipientPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from('whitelist'), recipient.toBuffer()],
+      [Buffer.from('whitelist'), registryPda.toBuffer(), recipient.toBuffer()],
       program.programId
     );
 

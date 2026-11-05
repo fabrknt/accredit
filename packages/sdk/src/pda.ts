@@ -29,13 +29,17 @@ export function findKycRegistryPda(
   );
 }
 
-/** Derive PDA for WhitelistEntry account (unified: seeds = [whitelist, wallet]) */
+/**
+ * Derive PDA for WhitelistEntry account (seeds = [whitelist, registry, wallet]).
+ * `registry` is the KycRegistry PDA (see findKycRegistryPda).
+ */
 export function findWhitelistEntryPda(
+  registry: PublicKey,
   wallet: PublicKey,
   programId: PublicKey
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [SEEDS.whitelist, wallet.toBuffer()],
+    [SEEDS.whitelist, registry.toBuffer(), wallet.toBuffer()],
     programId
   );
 }
@@ -51,13 +55,17 @@ export function findExtraAccountMetaListPda(
   );
 }
 
-/** Derive PDA for BlacklistEntry account (SSS-2 compliance) */
+/**
+ * Derive PDA for BlacklistEntry account (SSS-2 compliance,
+ * seeds = [blacklist, registry, wallet]).
+ */
 export function findBlacklistEntryPda(
+  registry: PublicKey,
   wallet: PublicKey,
   programId: PublicKey
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [SEEDS.blacklist, wallet.toBuffer()],
+    [SEEDS.blacklist, registry.toBuffer(), wallet.toBuffer()],
     programId
   );
 }

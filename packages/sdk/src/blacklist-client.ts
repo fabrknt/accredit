@@ -16,30 +16,37 @@ export class BlacklistClient {
     this.programId = transferHookProgramId;
   }
 
-  /** Derive PDA for BlacklistEntry */
-  deriveBlacklistPda(wallet: PublicKey): [PublicKey, number] {
-    return findBlacklistEntryPda(wallet, this.programId);
+  /** Derive PDA for BlacklistEntry of `wallet` in `registry` */
+  deriveBlacklistPda(registry: PublicKey, wallet: PublicKey): [PublicKey, number] {
+    return findBlacklistEntryPda(registry, wallet, this.programId);
   }
 
-  /** Fetch a BlacklistEntry account */
-  async getBlacklistEntry(wallet: PublicKey): Promise<BlacklistEntry | null> {
-    const cached = this.cache.get(wallet.toBase58());
+  /** Fetch the BlacklistEntry of `wallet` in `registry` */
+  async getBlacklistEntry(
+    registry: PublicKey,
+    wallet: PublicKey
+  ): Promise<BlacklistEntry | null> {
+    const cacheKey = `${registry.toBase58()}:${wallet.toBase58()}`;
+    const cached = this.cache.get(cacheKey);
     if (cached) return cached;
 
-    const [pda] = this.deriveBlacklistPda(wallet);
+    const [pda] = this.deriveBlacklistPda(registry, wallet);
     const accountInfo = await this.connection.getAccountInfo(pda);
     if (!accountInfo) return null;
 
     const entry = this.deserializeBlacklistEntry(accountInfo.data);
     if (entry) {
-      this.cache.set(wallet.toBase58(), entry);
+      this.cache.set(cacheKey, entry);
     }
     return entry;
   }
 
   /** Check if a wallet is currently blacklisted */
-  async isBlacklisted(wallet: PublicKey): Promise<{ blacklisted: boolean; reason?: string }> {
-    const entry = await this.getBlacklistEntry(wallet);
+  async isBlacklisted(
+    registry: PublicKey,
+    wallet: PublicKey
+  ): Promise<{ blacklisted: boolean; reason?: string }> {
+    const entry = await this.getBlacklistEntry(registry, wallet);
 
     if (!entry) {
       return { blacklisted: false };
@@ -52,10 +59,10 @@ export class BlacklistClient {
     return { blacklisted: true, reason: entry.reason };
   }
 
-  /** Clear cache */
-  clearCache(wallet?: PublicKey): void {
-    if (wallet) {
-      this.cache.delete(wallet.toBase58());
+  /** Clear cache (one entry when registry and wallet are given) */
+  clearCache(registry?: PublicKey, wallet?: PublicKey): void {
+    if (registry && wallet) {
+      this.cache.delete(`${registry.toBase58()}:${wallet.toBase58()}`);
     } else {
       this.cache.clear();
     }

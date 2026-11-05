@@ -1,6 +1,6 @@
 {
   "name": "@fabrknt/accredit-sdk",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "SDK for Accredit KYC/AML compliance programs",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

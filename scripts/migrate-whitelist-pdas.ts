@@ -1,8 +1,8 @@
 /**
  * Migration script: Continuum's old whitelist PDA pattern → unified Accredit pattern
  *
- * Old PDA: seeds = [b"whitelist", registry.key(), wallet.key()]
- * New PDA: seeds = [b"whitelist", wallet.key()]
+ * Old PDA: seeds = [b"whitelist", old_registry.key(), wallet.key()] (old program)
+ * New PDA: seeds = [b"whitelist", new_registry.key(), wallet.key()] (unified program)
  *
  * Steps:
  * 1. Fetch all existing WhitelistEntry accounts with old PDA pattern
@@ -87,9 +87,12 @@ async function fetchOldWhitelistEntries(
   return entries;
 }
 
-function deriveNewWhitelistPda(wallet: PublicKey): [PublicKey, number] {
+function deriveNewWhitelistPda(
+  newRegistry: PublicKey,
+  wallet: PublicKey
+): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [OLD_WHITELIST_SEED, wallet.toBuffer()],
+    [OLD_WHITELIST_SEED, newRegistry.toBuffer(), wallet.toBuffer()],
     NEW_PROGRAM_ID
   );
 }
@@ -121,8 +124,8 @@ async function main() {
   console.log('   - daily_limit: 0 (unlimited)');
   console.log('4. Close old accounts to reclaim rent');
   console.log('');
-  console.log('New PDA pattern: seeds = [b"whitelist", wallet.key()]');
-  console.log('Old PDA pattern: seeds = [b"whitelist", registry.key(), wallet.key()]');
+  console.log('New PDA pattern: seeds = [b"whitelist", new_registry.key(), wallet.key()]');
+  console.log('Old PDA pattern: seeds = [b"whitelist", old_registry.key(), wallet.key()]');
 }
 
 main().catch(console.error);

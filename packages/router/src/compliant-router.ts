@@ -57,6 +57,7 @@ export class ComplianceAwareRouter {
       rpcUrl: config.rpcUrl ?? '',
       registryAddress: registryProgramId.toBase58(),
       complianceAddress: transferHookProgramId.toBase58(),
+      kycRegistry: config.kycRegistry,
       aggregatorApiBaseUrl: apiBaseUrl,
       defaultSlippageBps: config.defaultSlippageBps ?? 50,
       fallbackToDirectRoutes: config.fallbackToDirectRoutes ?? true,
@@ -80,7 +81,14 @@ export class ComplianceAwareRouter {
     );
 
     this.filter = new RouteComplianceFilter(this.whitelist);
-    this.kycChecker = new KycComplianceChecker(connection, transferHookProgramId);
+    if (!config.kycRegistry) {
+      throw new Error('config.kycRegistry (transfer-hook KycRegistry address) is required');
+    }
+    this.kycChecker = new KycComplianceChecker(
+      connection,
+      transferHookProgramId,
+      new PublicKey(config.kycRegistry)
+    );
     this.zkProver = new ZkComplianceProver(noirProver);
   }
 

@@ -45,7 +45,7 @@ One entry per wallet. Stores the wallet's KYC status, jurisdiction, and transfer
 | `created_at` | `i64` | Unix timestamp |
 | `bump` | `u8` | PDA bump seed |
 
-**PDA seeds:** `["whitelist", wallet]`
+**PDA seeds:** `["whitelist", registry, wallet]` — an entry belongs to one registry, so each registry creates its own entries.
 
 ## Instructions
 
@@ -124,10 +124,10 @@ Set up the Token-2022 extra account meta list for automatic transfer hook resolu
 
 The meta list resolves five additional accounts for each transfer:
 1. **KycRegistry** — derived from mint
-2. **Sender WhitelistEntry** — `["whitelist", owner]`, where owner is the wallet stored in the source token account (bytes 32..64)
-3. **Recipient WhitelistEntry** — `["whitelist", owner]` of the destination token account
-4. **Sender BlacklistEntry** — `["blacklist", owner]` of the source token account (may be an empty account)
-5. **Recipient BlacklistEntry** — `["blacklist", owner]` of the destination token account (may be an empty account)
+2. **Sender WhitelistEntry** — `["whitelist", registry, owner]`, where owner is the wallet stored in the source token account (bytes 32..64)
+3. **Recipient WhitelistEntry** — `["whitelist", registry, owner]` of the destination token account
+4. **Sender BlacklistEntry** — `["blacklist", registry, owner]` of the source token account (may be an empty account)
+5. **Recipient BlacklistEntry** — `["blacklist", registry, owner]` of the destination token account (may be an empty account)
 
 **Accounts:**
 
@@ -137,6 +137,10 @@ The meta list resolves five additional accounts for each transfer:
 | `mint` | No | No | Token-2022 mint |
 | `extra_account_meta_list` | No | Yes | Meta list PDA (initialized) |
 | `system_program` | No | No | System program |
+
+### `update_extra_account_meta_list`
+
+Rewrite an existing mint's meta list to the current list above (for mints whose list was created before the entry seeds included the registry). Signed by the registry authority; accounts: `authority` (signer), `mint`, `registry`, `extra_account_meta_list` (writable).
 
 ### `execute`
 
