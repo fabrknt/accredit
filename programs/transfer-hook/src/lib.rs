@@ -354,7 +354,8 @@ pub mod transfer_hook {
         let lamports = Rent::get()?.minimum_balance(account_size);
 
         let mint_key = ctx.accounts.mint.key();
-        let signer_seeds: &[&[u8]] = &[b"extra-account-metas", mint_key.as_ref()];
+        let bump = [ctx.bumps.extra_account_meta_list];
+        let signer_seeds: &[&[u8]] = &[b"extra-account-metas", mint_key.as_ref(), &bump];
 
         anchor_lang::system_program::create_account(
             CpiContext::new(
