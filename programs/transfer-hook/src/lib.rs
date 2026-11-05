@@ -89,9 +89,35 @@ pub enum TransferHookError {
 pub mod transfer_hook {
     use super::*;
 
-    /// Initialize the KYC registry for a specific mint
+    /// Initialize the KYC registry for a specific mint.
+    ///
+    /// The signer must be the mint's mint authority. For a mint without a
+    /// mint authority (fixed supply), the signer must instead be this
+    /// program's upgrade authority, shown by passing its ProgramData account.
     pub fn initialize_registry(ctx: Context<InitializeRegistry>) -> Result<()> {
         let clock = Clock::get()?;
+        let signer = ctx.accounts.authority.key();
+        match ctx.accounts.mint.mint_authority {
+            anchor_lang::solana_program::program_option::COption::Some(mint_authority) => {
+                require_keys_eq!(mint_authority, signer, TransferHookError::Unauthorized);
+            }
+            anchor_lang::solana_program::program_option::COption::None => {
+                let program_data = ctx
+                    .accounts
+                    .program_data
+                    .as_ref()
+                    .ok_or(TransferHookError::Unauthorized)?;
+                let (expected, _) = Pubkey::find_program_address(
+                    &[crate::ID.as_ref()],
+                    &anchor_lang::solana_program::bpf_loader_upgradeable::ID,
+                );
+                require_keys_eq!(program_data.key(), expected, TransferHookError::Unauthorized);
+                require!(
+                    program_data.upgrade_authority_address == Some(signer),
+                    TransferHookError::Unauthorized
+                );
+            }
+        }
         let registry = &mut ctx.accounts.registry;
 
         registry.authority = ctx.accounts.authority.key();
@@ -544,6 +570,10 @@ pub struct InitializeRegistry<'info> {
         bump
     )]
     pub registry: Account<'info, KycRegistry>,
+
+    /// This program's ProgramData account. Only needed (and only read) when
+    /// the mint has no mint authority.
+    pub program_data: Option<Account<'info, ProgramData>>,
 
     pub system_program: Program<'info, System>,
 }

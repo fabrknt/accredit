@@ -281,7 +281,7 @@ export interface MyProjectSpecificType { ... }
 To attach the transfer hook to a new token mint:
 
 1. Create the mint with the transfer-hook extension pointing to `4CoN4C1mqdkgvgQeXMSa1Pnb7guFH89DekEvRHgKmivf`
-2. Call `initialize_registry` with the mint to create the KYC registry
+2. Call `initialize_registry` with the mint, signed by the mint authority, to create the KYC registry
 3. Call `initialize_extra_account_meta_list` with the mint to enable hook resolution
 4. Call `add_to_whitelist` for each verified wallet
 

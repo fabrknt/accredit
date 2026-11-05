@@ -53,13 +53,16 @@ One entry per wallet. Stores the wallet's KYC status, jurisdiction, and transfer
 
 Create a KYC registry for a token mint. Sets `require_kyc` and `verified_only` to `true` by default.
 
+The `authority` must be the mint's mint authority. If the mint has no mint authority, the `authority` must be this program's upgrade authority and `program_data` must be passed.
+
 **Accounts:**
 
 | Account | Signer | Writable | Description |
 |---------|--------|----------|-------------|
-| `authority` | Yes | Yes | Registry admin (pays rent) |
+| `authority` | Yes | Yes | Mint authority of `mint` (becomes the registry admin, pays rent) |
 | `mint` | No | No | Token-2022 mint |
 | `registry` | No | Yes | KycRegistry PDA (initialized) |
+| `program_data` | No | No | Optional. This program's ProgramData account; required only when `mint` has no mint authority |
 | `system_program` | No | No | System program |
 
 ### `add_to_whitelist`
