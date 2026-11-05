@@ -649,3 +649,94 @@ fn ordinary_delegate_gets_no_exemption() {
     assert_code(env.send(&[ix], &[&other]), ERR_SENDER_BLACKLISTED);
     assert_eq!(env.balance(&t), 0);
 }
+
+// ---------------------------------------------------------------------------
+// Registry init by the upgrade authority, hook mismatch, daily limit
+// ---------------------------------------------------------------------------
+
+#[test]
+fn upgrade_authority_creates_registry_for_a_pda_authority_mint() {
+    // The mint authority is a PDA of some other program, which can never
+    // sign initialize_registry itself.
+    let pda_authority =
+        Pubkey::find_program_address(&[b"mint_config"], &Pubkey::new_unique()).0;
+    let mut env = setup_with(MintOpts {
+        mint_authority: Some(pda_authority),
+        init_registry: false,
+        ..MintOpts::default()
+    });
+    let upgrader = Keypair::new();
+    let admin = Keypair::new();
+    let mallory = Keypair::new();
+    for k in [&upgrader, &admin, &mallory] {
+        env.svm.airdrop(&k.pubkey(), 1_000_000_000).unwrap();
+    }
+    let mint = env.mint;
+
+    // No ProgramData passed: rejected.
+    let ix = initialize_registry_ix(&upgrader.pubkey(), &mint, &admin.pubkey(), false);
+    assert_code(env.send(&[ix], &[&upgrader]), ERR_UNAUTHORIZED);
+
+    // ProgramData passed, but the signer is not the upgrade authority.
+    env.set_program_data(Some(upgrader.pubkey()));
+    let ix = initialize_registry_ix(&mallory.pubkey(), &mint, &mallory.pubkey(), true);
+    assert_code(env.send(&[ix], &[&mallory]), ERR_UNAUTHORIZED);
+
+    // An immutable program (no upgrade authority) grants nobody this path.
+    env.set_program_data(None);
+    let ix = initialize_registry_ix(&upgrader.pubkey(), &mint, &admin.pubkey(), true);
+    assert_code(env.send(&[ix], &[&upgrader]), ERR_UNAUTHORIZED);
+
+    // The upgrade authority creates it and names a separate admin.
+    env.set_program_data(Some(upgrader.pubkey()));
+    let ix = initialize_registry_ix(&upgrader.pubkey(), &mint, &admin.pubkey(), true);
+    env.send(&[ix], &[&upgrader]).unwrap();
+    assert_eq!(env.registry_authority(), admin.pubkey());
+
+    // The named admin manages the whitelist; the signer does not.
+    env.admin = admin.insecure_clone();
+    let wallet = Pubkey::new_unique();
+    let ix = env.add_to_whitelist_ix(&wallet);
+    env.send_admin(&[ix]).unwrap();
+    env.admin = upgrader.insecure_clone();
+    let ix = env.add_to_whitelist_ix(&Pubkey::new_unique());
+    assert_code(env.send_admin(&[ix]), ERR_UNAUTHORIZED);
+}
+
+#[test]
+fn execute_rejects_a_mint_hooked_to_another_program() {
+    let mut env = setup_with(MintOpts {
+        hook_program: Pubkey::new_unique(),
+        ..MintOpts::default()
+    });
+    let alice = env.new_wallet(0);
+    let bob = env.new_wallet(0);
+    let (a, b) = (alice.pubkey(), bob.pubkey());
+    let ixs = [env.add_to_whitelist_ix(&a), env.add_to_whitelist_ix(&b)];
+    env.send_admin(&ixs).unwrap();
+
+    let ix = env.direct_execute_ix(&a, &b, 1);
+    assert_code(env.send(&[ix], &[]), ERR_HOOK_PROGRAM_MISMATCH);
+}
+
+#[test]
+fn daily_limit_is_enforced_across_transfers() {
+    let mut env = setup();
+    let alice = env.new_wallet(1_000_000);
+    let bob = env.new_wallet(0);
+    let (a, b) = (alice.pubkey(), bob.pubkey());
+    let ixs = [
+        env.add_to_whitelist_with_limit_ix(&a, 100_000),
+        env.add_to_whitelist_ix(&b),
+    ];
+    env.send_admin(&ixs).unwrap();
+
+    let ix = env.transfer_ix(&alice, &b, 60_000);
+    env.send(&[ix], &[&alice]).unwrap();
+    let ix = env.transfer_ix(&alice, &b, 60_000);
+    assert_code(env.send(&[ix], &[&alice]), ERR_DAILY_LIMIT_EXCEEDED);
+    let ix = env.transfer_ix(&alice, &b, 40_000);
+    env.send(&[ix], &[&alice]).unwrap();
+    assert_eq!(env.daily_volume(&a), 100_000);
+    assert_eq!(env.balance(&b), 100_000);
+}
